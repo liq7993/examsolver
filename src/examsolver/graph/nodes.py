@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import logging
 
-from examsolver.contracts import NoteEntry
 from examsolver.graph.router_agent import route_question
 from examsolver.graph.state import SolveGraphState
+from examsolver.notes.note_builder import build_note
 from examsolver.pipeline.dispatcher import dispatch
 from examsolver.pipeline.formatter import format_response
 from examsolver.pipeline.normalizer import normalize
@@ -122,25 +122,10 @@ def note_builder_node(state: SolveGraphState) -> SolveGraphState:
     """Build the minimum one-question note shell for later frontend/export work."""
 
     normalized = state["normalized"]
-    result = state["solve_result"]
-    solve_id = str(normalized.hints["solve_id"])
-    title = _note_title(normalized.normalized_text)
-    note = NoteEntry(
-        solve_id=solve_id,
-        title=title,
-        question_latex=normalized.normalized_text,
-        steps=result.steps,
-        answer=result.answer,
-        student_explanation=result.student_explanation,
-        common_mistakes=_common_mistakes(result),
-        related_formulas=[],
-        flashcards=[],
-        citations=result.citations,
-        subject=normalized.subject,
-        question_type=result.question_type,
-    )
     request_id = str(normalized.hints.get("request_id", "unknown"))
-    logger.info("[%s] graph.note_builder_node: title=%s", request_id, title)
+    logger.info("[%s] graph.note_builder_node: begin", request_id)
+    note = build_note(state["solve_result"], normalized)
+    logger.info("[%s] graph.note_builder_node: done title=%s", request_id, note.title)
     return {"note": note}
 
 
@@ -169,14 +154,3 @@ def persist_node(state: SolveGraphState) -> SolveGraphState:
         return {"persistence_error": str(exc)}
     logger.info("[%s] graph.persist_node: done saved solve_id=%s", request_id, response.solve_id)
     return {}
-
-
-def _note_title(text: str) -> str:
-    compact = " ".join(text.split())
-    return compact[:32] or "未命名题目"
-
-
-def _common_mistakes(result: object) -> list[str]:
-    explanation = getattr(result, "student_explanation", None)
-    mistake = getattr(explanation, "common_mistake", "")
-    return [str(mistake)] if str(mistake).strip() else []

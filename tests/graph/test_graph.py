@@ -81,7 +81,7 @@ def test_note_builder_preserves_structured_steps() -> None:
     note = state["note"]
     assert note.solve_id == "abc"
     assert note.steps == result.steps
-    assert note.common_mistakes == ["漏乘指数"]
+    assert note.common_mistakes == []
 
 
 def test_explanation_enhancer_node_skips_when_explanation_exists() -> None:

@@ -118,14 +118,14 @@
 - [x] 节点判 `state.solve_result.student_explanation is None` 才执行
 - [x] 写回 `state.solve_result`
 
-### 📥 M1-07 · 接 note_builder_node（M1 最小版）
+### ✅ M1-07 · 接 note_builder_node（M1 最小版）
 **估时**：2 h
 **前置**：M1-06
 **出口**：
-- [ ] 新建 `src/examsolver/notes/note_builder.py`
-- [ ] `build_note(solve_result, normalized) -> NoteEntry`，目前 `common_mistakes=[]` `flashcards=[]` `related_formulas=[]`（M5 再丰富）
-- [ ] `contracts/solve.py` 加 `NoteEntry`
-- [ ] `state.note` 写入
+- [x] 新建 `src/examsolver/notes/note_builder.py`
+- [x] `build_note(solve_result, normalized) -> NoteEntry`，目前 `common_mistakes=[]` `flashcards=[]` `related_formulas=[]`（M5 再丰富）
+- [x] `contracts/solve.py` 加 `NoteEntry`
+- [x] `state.note` 写入
 
 ### 📥 M1-08 · build_graph 串起来 + solve_service 切换
 **估时**：1.5 h

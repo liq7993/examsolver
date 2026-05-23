@@ -1,0 +1,1 @@
+"""HTTP shell for Examsolver."""

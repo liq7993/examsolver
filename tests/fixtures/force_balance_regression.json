@@ -1,0 +1,92 @@
+[
+  {
+    "name": "zh_balanced_force",
+    "question": "一个 10 N 的力向右作用，求它的平衡力。",
+    "expected_subject": "mechanics",
+    "expected_question_type": "force_balance",
+    "expected_skill": "mechanics.force_balance",
+    "expected_answer_contains": "方向向左",
+    "expected_summary_contains": "方向与已知力相反"
+  },
+  {
+    "name": "en_balanced_force",
+    "question": "Find the equilibrant of a 12 N force to the left.",
+    "expected_subject": "mechanics",
+    "expected_question_type": "force_balance",
+    "expected_skill": "mechanics.force_balance",
+    "expected_answer_contains": "方向向右",
+    "expected_summary_contains": "方向与已知力相反"
+  },
+  {
+    "name": "zh_components",
+    "question": "将 20 N、与 x 轴成 30 度的力分解为 x、y 分量。",
+    "expected_subject": "mechanics",
+    "expected_question_type": "force_balance",
+    "expected_skill": "mechanics.force_balance",
+    "expected_answer_contains": "17.32",
+    "expected_summary_contains": "分解力"
+  },
+  {
+    "name": "en_components",
+    "question": "Resolve a 50 N force at 60 deg into x and y components.",
+    "expected_subject": "mechanics",
+    "expected_question_type": "force_balance",
+    "expected_skill": "mechanics.force_balance",
+    "expected_answer_contains": "43.3",
+    "expected_summary_contains": "分解力"
+  },
+  {
+    "name": "zh_equilibrium",
+    "question": "检查 10 N 向右和 10 N 向左是否平衡。",
+    "expected_subject": "mechanics",
+    "expected_question_type": "force_balance",
+    "expected_skill": "mechanics.force_balance",
+    "expected_answer_contains": "处于平衡",
+    "expected_summary_contains": "系统才处于平衡"
+  },
+  {
+    "name": "zh_no_space_unit_balanced_force",
+    "question": "一个 10N 的力向右作用，求它的平衡力。",
+    "expected_subject": "mechanics",
+    "expected_question_type": "force_balance",
+    "expected_skill": "mechanics.force_balance",
+    "expected_answer_contains": "方向向左",
+    "expected_summary_contains": "方向与已知力相反"
+  },
+  {
+    "name": "en_kn_balanced_force",
+    "question": "Find the equilibrant of a 2 kN force west.",
+    "expected_subject": "mechanics",
+    "expected_question_type": "force_balance",
+    "expected_skill": "mechanics.force_balance",
+    "expected_answer_contains": "$2\\,\\mathrm{kN}$",
+    "expected_summary_contains": "方向与已知力相反"
+  },
+  {
+    "name": "en_components_without_degree_unit",
+    "question": "Resolve a 50 N force at 60 into x and y components.",
+    "expected_subject": "mechanics",
+    "expected_question_type": "force_balance",
+    "expected_skill": "mechanics.force_balance",
+    "expected_answer_contains": "43.3",
+    "expected_summary_contains": "分解力"
+  },
+  {
+    "name": "zh_angle_equilibrium",
+    "question": "检查 10N 与 x 轴成 0 度和 10N 与 x 轴成 180 度是否平衡。",
+    "expected_subject": "mechanics",
+    "expected_question_type": "force_balance",
+    "expected_skill": "mechanics.force_balance",
+    "expected_answer_contains": "处于平衡",
+    "expected_summary_contains": "系统才处于平衡"
+  },
+  {
+    "name": "zh_not_equilibrium",
+    "question": "检查 10N 向右和 5N 向左是否平衡。",
+    "expected_subject": "mechanics",
+    "expected_question_type": "force_balance",
+    "expected_skill": "mechanics.force_balance",
+    "expected_answer_contains": "不处于平衡",
+    "expected_summary_contains": "系统才处于平衡"
+  }
+]

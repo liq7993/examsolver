@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ExamSolver</title>
+    <link rel="stylesheet" href="/static/vendor/katex/katex.min.css" />
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar" aria-label="解题历史和能力目录">
+        <div class="sidebar-head">
+          <div>
+            <h1>ExamSolver</h1>
+            <p>单题求解工作台</p>
+          </div>
+          <button id="new-thread" class="icon-button" type="button" title="新题">＋</button>
+        </div>
+
+        <section class="sidebar-section">
+          <h2>最近解答</h2>
+          <div id="history-list" class="history-list" aria-live="polite">
+            <p class="muted">暂无历史</p>
+          </div>
+        </section>
+
+        <section class="sidebar-section">
+          <h2>能力目录</h2>
+          <div id="capability-list" class="capability-list" aria-live="polite">
+            <p class="muted">读取中</p>
+          </div>
+        </section>
+      </aside>
+
+      <section class="workspace" aria-label="当前解答页">
+        <section class="workspace-content" aria-live="polite">
+          <div class="page-nav-bar">
+            <button id="page-prev" class="page-nav-button" type="button" title="上一页">↑</button>
+            <span id="page-indicator" class="page-indicator">0 / 0</span>
+            <button id="page-next" class="page-nav-button" type="button" title="下一页">↓</button>
+          </div>
+
+          <div id="empty-page" class="empty-page">
+            <p>输入题目开始生成解题笔记。</p>
+          </div>
+
+          <div id="note-stack" class="note-stack" hidden>
+            <section class="note-panel">
+              <div class="problem-header">
+                <p class="eyebrow">解题笔记工作区</p>
+                <h2 id="problem-subject">未识别</h2>
+                <h3 id="problem-type">新题</h3>
+                <time id="problem-time">ready</time>
+                <p id="problem-text">选择一个样例，或输入一道题开始。</p>
+              </div>
+            </section>
+
+            <section id="result-status" class="status-strip" role="status" aria-live="polite" hidden>
+              <span id="status-kind">ready</span>
+              <p id="status-message">等待解题结果</p>
+            </section>
+
+            <section id="page-tools" class="page-tools" aria-label="当前解答操作" hidden>
+              <button id="copy-answer" type="button">复制答案</button>
+              <button id="copy-note" type="button">复制笔记</button>
+              <button id="download-note" type="button">下载 Markdown</button>
+              <span id="tool-feedback" aria-live="polite"></span>
+            </section>
+
+            <section id="answer-panel" class="note-panel">
+              <div class="panel-header">
+                <h2>最终答案</h2>
+                <span id="answer-skill">unknown</span>
+              </div>
+              <p id="answer-text" class="answer-block math">等待解题结果</p>
+            </section>
+
+            <section id="steps-panel" class="note-panel">
+              <div class="panel-header">
+                <h2>步骤</h2>
+                <span id="steps-meta">0 步</span>
+              </div>
+              <div id="steps-layout" class="steps-layout"></div>
+            </section>
+
+            <section id="formulas-panel" class="note-panel" hidden>
+              <div class="panel-header">
+                <h2>公式</h2>
+                <span id="formulas-meta">0 项</span>
+              </div>
+              <div id="formula-list" class="formula-list"></div>
+            </section>
+
+            <section id="explanation-panel" class="note-panel" hidden>
+              <div class="panel-header">
+                <h2>学生解释</h2>
+                <span>summary</span>
+              </div>
+              <div id="explanation-grid" class="explanation-grid"></div>
+            </section>
+          </div>
+        </section>
+
+        <form id="solve-form" class="composer-bar">
+          <div class="composer-inner">
+            <div class="composer-row">
+              <textarea
+                id="question-input"
+                name="question"
+                rows="1"
+                autocomplete="off"
+                placeholder="输入当前支持的受力平衡题，Enter 提交，Shift + Enter 换行"
+              ></textarea>
+              <button id="submit-button" class="primary-button" type="submit">↑</button>
+            </div>
+            <div class="example-row" aria-label="样例题目">
+              <button type="button" data-example="一个 10 N 的力向右作用，求它的平衡力。">
+                平衡力
+              </button>
+              <button type="button" data-example="将 20 N、与 x 轴成 30 度的力分解为 x、y 分量。">
+                分力
+              </button>
+              <button type="button" data-example="求 x^2 对 x 的导数">求导</button>
+              <button type="button" data-example="计算矩阵 [[1,2],[3,4]] 乘 [[5,6],[7,8]]">
+                矩阵
+              </button>
+            </div>
+          </div>
+        </form>
+      </section>
+    </main>
+    <script src="/static/vendor/katex/katex.min.js" defer></script>
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>

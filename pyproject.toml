@@ -37,6 +37,9 @@ build-backend = "hatchling.build"
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+markers = [
+    "local: tests that require a local llama-server or equivalent runtime",
+]
 
 [tool.ruff]
 line-length = 100

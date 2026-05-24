@@ -8,6 +8,7 @@ import respx
 
 from examsolver.llm import ClaudeClient, Message, pick_llm
 from examsolver.llm.claude_client import ANTHROPIC_MESSAGES_URL, STRUCTURED_OUTPUT_TOOL
+from examsolver.llm.local_gguf import LocalGGUFClient
 
 
 def test_claude_client_requires_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -162,7 +163,7 @@ def test_router_returns_claude_for_cloud_tasks(monkeypatch: pytest.MonkeyPatch) 
     assert isinstance(pick_llm("synthesize", needs_vision=False), ClaudeClient)
     assert isinstance(pick_llm("explain", needs_vision=False), ClaudeClient)
     assert isinstance(pick_llm("route", needs_vision=True), ClaudeClient)
-    assert pick_llm("route", needs_vision=False) is None
+    assert isinstance(pick_llm("route", needs_vision=False), LocalGGUFClient)
 
 
 @pytest.mark.skipif(

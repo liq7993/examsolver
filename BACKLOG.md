@@ -168,14 +168,14 @@
 - [x] 失败重试 1 次
 - [x] 单测用 `respx` mock httpx 请求
 
-### 📥 M2-03 · Local GGUF client
+### ✅ M2-03 · Local GGUF client
 **估时**：1.5 h
 **前置**：M2-01
 **出口**：
-- [ ] `llm/local_gguf.py` 走 OpenAI-compatible API（指 llama-server）
-- [ ] 配置读自 `EXAMSOLVER_LLM_BASE_URL` `EXAMSOLVER_LLM_MODEL`
-- [ ] JSON 输出用 grammar / json_schema_strict
-- [ ] 测试用本地起 llama-server（可标 `@pytest.mark.local`）
+- [x] `llm/local_gguf.py` 走 OpenAI-compatible API（指 llama-server）
+- [x] 配置读自 `EXAMSOLVER_LLM_BASE_URL` `EXAMSOLVER_LLM_MODEL`
+- [x] JSON 输出用 grammar / json_schema_strict
+- [x] 测试用本地起 llama-server（可标 `@pytest.mark.local`）
 
 ### 📥 M2-04 · FakeLLMClient（测试用）
 **估时**：1 h

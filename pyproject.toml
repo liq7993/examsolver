@@ -21,11 +21,14 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "ruff>=0.4", "mypy>=1.10"]
+dev = ["pytest>=8", "respx>=0.22", "ruff>=0.4", "mypy>=1.10"]
 llm = ["anthropic>=0.75", "langchain-anthropic>=1", "openai>=2"]
 ocr = ["paddleocr>=3", "paddlepaddle>=3"]
 rag = ["pypdf>=6", "sentence-transformers>=5", "sqlite-vec>=0.1"]
 export = ["pillow>=11", "python-docx>=1.1"]
+
+[dependency-groups]
+dev = ["pytest>=8", "respx>=0.22", "ruff>=0.4", "mypy>=1.10"]
 
 [build-system]
 requires = ["hatchling"]

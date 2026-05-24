@@ -158,15 +158,15 @@
 - [x] `base.py` 定义 `LLMClient` Protocol + `Message` 数据类
 - [x] `router.py` 实现 `pick_llm(task_kind, needs_vision)`，目前返回 None（M2-02 / M2-03 填）
 
-### 📥 M2-02 · Claude client
+### ✅ M2-02 · Claude client
 **估时**：2 h
 **前置**：M2-01
 **出口**：
-- [ ] `llm/claude_client.py` 实现 `LLMClient`
-- [ ] 支持 `json_schema` 强约束（用 Anthropic tool use）
-- [ ] 支持 `chat_with_image(images=[bytes])`
-- [ ] 失败重试 1 次
-- [ ] 单测用 `respx` mock httpx 请求
+- [x] `llm/claude_client.py` 实现 `LLMClient`
+- [x] 支持 `json_schema` 强约束（用 Anthropic tool use）
+- [x] 支持 `chat_with_image(images=[bytes])`
+- [x] 失败重试 1 次
+- [x] 单测用 `respx` mock httpx 请求
 
 ### 📥 M2-03 · Local GGUF client
 **估时**：1.5 h

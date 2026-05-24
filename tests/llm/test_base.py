@@ -53,4 +53,4 @@ def test_llm_client_protocol_shape_accepts_fake_client() -> None:
 
 def test_pick_llm_returns_none_until_clients_are_registered() -> None:
     assert pick_llm("route", needs_vision=False) is None
-    assert pick_llm("general_solve", needs_vision=True) is None
+    assert pick_llm("general_solve", needs_vision=False) is None

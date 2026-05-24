@@ -1,6 +1,6 @@
 import logging
 
-from examsolver.contracts import NormalizedQuestion, SolveRequest, SolveResult, Step
+from examsolver.contracts import NormalizedQuestion, NoteEntry, SolveRequest, SolveResult, Step
 from examsolver.graph.nodes import format_node, normalize_node, persist_node
 from examsolver.storage.history_repo import get_response
 
@@ -28,6 +28,28 @@ def test_format_node_writes_response_and_logs_lifecycle(caplog) -> None:
     messages = [record.getMessage() for record in caplog.records]
     assert any("graph.format_node: begin" in message for message in messages)
     assert any("graph.format_node: done" in message for message in messages)
+
+
+def test_format_node_attaches_note_when_present() -> None:
+    normalized = _normalized()
+    note = NoteEntry(
+        solve_id="solve-1",
+        title="求导",
+        question_latex=normalized.normalized_text,
+        steps=_result().steps,
+        answer="2x",
+        student_explanation=None,
+        common_mistakes=[],
+        related_formulas=[],
+        flashcards=[],
+        citations=[],
+        subject="calculus",
+        question_type="derivative",
+    )
+
+    state = format_node({"normalized": normalized, "solve_result": _result(), "note": note})
+
+    assert state["response"].note == note
 
 
 def test_persist_node_saves_response_and_logs_lifecycle(caplog) -> None:

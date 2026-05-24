@@ -8,7 +8,16 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from examsolver.contracts import Citation, NormalizedQuestion, SolveResponse, StudentExplanation
+from examsolver.contracts import (
+    Citation,
+    Flashcard,
+    FormulaCard,
+    NormalizedQuestion,
+    NoteEntry,
+    SolveResponse,
+    Step,
+    StudentExplanation,
+)
 from examsolver.skills.base import PersistenceError
 from examsolver.storage.db import connect
 
@@ -178,6 +187,7 @@ def _response_from_json(payload: str) -> SolveResponse:
         citations=_citations_from_json(data.get("citations")),
         fallback_reasons=[str(reason) for reason in data.get("fallback_reasons", [])],
         diagnostics=dict(data.get("diagnostics", {})),
+        note=_note_from_json(data.get("note")),
     )
 
 
@@ -204,6 +214,81 @@ def _citations_from_json(value: Any) -> list[Citation]:
                 )
             )
     return citations
+
+
+def _note_from_json(value: Any) -> NoteEntry | None:
+    if not isinstance(value, dict):
+        return None
+    explanation_data = value.get("student_explanation")
+    explanation = (
+        StudentExplanation(**explanation_data) if isinstance(explanation_data, dict) else None
+    )
+    return NoteEntry(
+        solve_id=str(value.get("solve_id", "")),
+        title=str(value.get("title", "")),
+        question_latex=str(value.get("question_latex", "")),
+        steps=_steps_from_json(value.get("steps")),
+        answer=_answer_from_json(value.get("answer")),
+        student_explanation=explanation,
+        common_mistakes=[str(item) for item in value.get("common_mistakes", [])],
+        related_formulas=_formula_cards_from_json(value.get("related_formulas")),
+        flashcards=_flashcards_from_json(value.get("flashcards")),
+        citations=_citations_from_json(value.get("citations")),
+        subject=value.get("subject") if value.get("subject") is None else str(value.get("subject")),
+        question_type=str(value.get("question_type", "")),
+        created_at=None,
+    )
+
+
+def _steps_from_json(value: Any) -> list[Step]:
+    if not isinstance(value, list):
+        return []
+    steps: list[Step] = []
+    for item in value:
+        if isinstance(item, dict):
+            steps.append(
+                Step(
+                    index=int(item.get("index", len(steps) + 1)),
+                    description=str(item.get("description", "")),
+                    formula_latex=(
+                        str(item["formula_latex"]) if item.get("formula_latex") is not None else None
+                    ),
+                    image_hint=str(item["image_hint"]) if item.get("image_hint") is not None else None,
+                )
+            )
+    return steps
+
+
+def _formula_cards_from_json(value: Any) -> list[FormulaCard]:
+    if not isinstance(value, list):
+        return []
+    cards: list[FormulaCard] = []
+    for item in value:
+        if isinstance(item, dict):
+            cards.append(
+                FormulaCard(
+                    title=str(item.get("title", "")),
+                    formula_latex=str(item.get("formula_latex", "")),
+                    explanation=str(item.get("explanation", "")),
+                )
+            )
+    return cards
+
+
+def _flashcards_from_json(value: Any) -> list[Flashcard]:
+    if not isinstance(value, list):
+        return []
+    cards: list[Flashcard] = []
+    for item in value:
+        if isinstance(item, dict):
+            cards.append(
+                Flashcard(
+                    front=str(item.get("front", "")),
+                    back=str(item.get("back", "")),
+                    tag=str(item.get("tag", "")),
+                )
+            )
+    return cards
 
 
 def _snippet(question: str) -> str:

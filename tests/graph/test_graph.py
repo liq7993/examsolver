@@ -122,10 +122,14 @@ def test_run_solve_graph_matches_existing_service_contract() -> None:
     assert response.question_type == "derivative"
     assert response.skill == "calculus.derivative"
     assert response.answer == "$\\frac{d}{dx}(x^2) = 2x$"
+    assert response.note is not None
+    assert response.note.solve_id == response.solve_id
 
     stored = get_response(response.solve_id)
     assert stored is not None
     assert stored.answer == response.answer
+    assert stored.note is not None
+    assert stored.note.solve_id == response.solve_id
 
 
 def test_run_solve_graph_unknown_uses_general_fallback() -> None:

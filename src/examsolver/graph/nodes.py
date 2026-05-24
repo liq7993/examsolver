@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import replace
 
 from examsolver.graph.router_agent import route_question
 from examsolver.graph.state import SolveGraphState
@@ -135,7 +136,7 @@ def format_node(state: SolveGraphState) -> SolveGraphState:
     normalized = state["normalized"]
     request_id = str(normalized.hints.get("request_id", "unknown"))
     logger.info("[%s] graph.format_node: begin", request_id)
-    response = format_response(normalized, state["solve_result"])
+    response = replace(format_response(normalized, state["solve_result"]), note=state.get("note"))
     logger.info("[%s] graph.format_node: done success=%s", request_id, response.success)
     return {"response": response}
 

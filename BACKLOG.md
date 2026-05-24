@@ -127,7 +127,7 @@
 - [x] `contracts/solve.py` 加 `NoteEntry`
 - [x] `state.note` 写入
 
-### 📥 M1-08 · build_graph 串起来 + solve_service 切换
+### ✅ M1-08 · build_graph 串起来 + solve_service 切换
 **估时**：1.5 h
 **前置**：M1-07
 **出口**：

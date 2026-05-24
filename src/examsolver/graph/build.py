@@ -13,11 +13,9 @@ from examsolver.contracts import ExplanationEnhancer, SolveRequest, SolveRespons
 from examsolver.graph.nodes import (
     explanation_enhancer_node,
     format_node,
-    general_node,
     normalize_node,
     note_builder_node,
     persist_node,
-    route_after_router,
     router_agent_node,
     skill_node,
 )
@@ -39,7 +37,6 @@ def build_graph() -> CompiledStateGraph:
     graph.add_node("normalize", normalize_node)
     graph.add_node("router_agent", router_agent_node)
     graph.add_node("skill", skill_node)
-    graph.add_node("general", general_node)
     graph.add_node("explanation_enhancer", explanation_enhancer_node)
     graph.add_node("note_builder", note_builder_node)
     graph.add_node("format", format_node)
@@ -47,13 +44,8 @@ def build_graph() -> CompiledStateGraph:
 
     graph.add_edge(START, "normalize")
     graph.add_edge("normalize", "router_agent")
-    graph.add_conditional_edges(
-        "router_agent",
-        route_after_router,
-        {"skill": "skill", "general": "general"},
-    )
+    graph.add_edge("router_agent", "skill")
     graph.add_edge("skill", "explanation_enhancer")
-    graph.add_edge("general", "explanation_enhancer")
     graph.add_edge("explanation_enhancer", "note_builder")
     graph.add_edge("note_builder", "format")
     graph.add_edge("format", "persist")

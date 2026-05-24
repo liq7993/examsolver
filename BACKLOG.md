@@ -63,7 +63,7 @@
 
 ---
 
-## M1 · LangGraph 接入 + Router
+## ✅ M1 · LangGraph 接入 + Router
 
 ### ✅ M1-01 · 建 `graph/` 包骨架
 **估时**：1 h
@@ -131,20 +131,20 @@
 **估时**：1.5 h
 **前置**：M1-07
 **出口**：
-- [ ] `build.py` 用 LangGraph DSL 连接节点（线性图，M1 暂无分支）
-- [ ] 改造 [`services/solve_service.solve()`](src/examsolver/services/solve_service.py) 内部调 `graph.invoke(initial_state)`
-- [ ] 外部签名不变
-- [ ] `python scripts/smoke.py "求 x^2 对 x 的导数"` 与改造前输出语义等价
+- [x] `build.py` 用 LangGraph DSL 连接节点（线性图，M1 暂无分支）
+- [x] 改造 [`services/solve_service.solve()`](src/examsolver/services/solve_service.py) 内部调 `graph.invoke(initial_state)`
+- [x] 外部签名不变
+- [x] `python scripts/smoke.py "求 x^2 对 x 的导数"` 与改造前输出语义等价
 
-### 📥 M1-09 · M1 出口验收
+### ✅ M1-09 · M1 出口验收
 **估时**：1 h
 **前置**：M1-01..M1-08
 **出口**：
-- [ ] 所有旧测试绿
-- [ ] `tests/graph/` 全绿
-- [ ] 日志格式符合 [`CONVENTIONS §4.3`](./CONVENTIONS.md)
-- [ ] `POST /solve` HTTP 行为不变
-- [ ] commit `M1: langgraph integration complete`
+- [x] 所有旧测试绿
+- [x] `tests/graph/` 全绿
+- [x] 日志格式符合 [`CONVENTIONS §4.3`](./CONVENTIONS.md)
+- [x] `POST /solve` HTTP 行为不变
+- [x] commit `M1: langgraph integration complete`
 
 ---
 

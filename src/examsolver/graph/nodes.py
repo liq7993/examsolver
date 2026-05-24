@@ -22,12 +22,13 @@ logger = logging.getLogger(__name__)
 def normalize_node(state: SolveGraphState) -> SolveGraphState:
     """Normalize raw input into the central question contract."""
 
-    logger.info("[unknown] graph.normalize_node: begin")
+    _log_info("unknown", "normalize_node", "begin")
     normalized = normalize(state["request"])
     request_id = str(normalized.hints["request_id"])
-    logger.info(
-        "[%s] graph.normalize_node: done subject=%s images=%s",
+    _log_info(
         request_id,
+        "normalize_node",
+        "done subject=%s images=%s",
         normalized.subject,
         len(normalized.image_paths),
     )
@@ -40,9 +41,10 @@ def router_agent_node(state: SolveGraphState) -> SolveGraphState:
     normalized = state["normalized"]
     decision = route_question(normalized)
     request_id = str(normalized.hints.get("request_id", "unknown"))
-    logger.info(
-        "[%s] graph.router_agent_node: subject=%s question_type=%s confidence=%.2f",
+    _log_info(
         request_id,
+        "router_agent_node",
+        "subject=%s question_type=%s confidence=%.2f",
         decision.subject,
         decision.question_type,
         decision.confidence,
@@ -69,7 +71,7 @@ def skill_node(state: SolveGraphState) -> SolveGraphState:
     try:
         result = dispatch(normalized, state["question_type"])
     except Exception as exc:
-        logger.warning("[%s] graph.skill_node: fallback primary_skill_failed: %s", request_id, exc)
+        _log_warning(request_id, "skill_node", "fallback primary_skill_failed: %s", exc)
         result = unknown_skill().solve(normalized)
         fallback_reasons = [*state.get("fallback_reasons", []), "primary_skill_failed"]
         return {
@@ -77,7 +79,7 @@ def skill_node(state: SolveGraphState) -> SolveGraphState:
             "fallback_reasons": fallback_reasons,
         }
 
-    logger.info("[%s] graph.skill_node: skill=%s", request_id, result.skill)
+    _log_info(request_id, "skill_node", "skill=%s", result.skill)
     return {"solve_result": result}
 
 
@@ -87,7 +89,7 @@ def general_node(state: SolveGraphState) -> SolveGraphState:
     normalized = state["normalized"]
     request_id = str(normalized.hints.get("request_id", "unknown"))
     result = unknown_skill().solve(normalized)
-    logger.info("[%s] graph.general_node: skill=%s", request_id, result.skill)
+    _log_info(request_id, "general_node", "skill=%s", result.skill)
     return {"solve_result": result}
 
 
@@ -97,11 +99,12 @@ def explanation_enhancer_node(state: SolveGraphState) -> SolveGraphState:
     normalized = state["normalized"]
     request_id = str(normalized.hints.get("request_id", "unknown"))
     result = state["solve_result"]
-    logger.info("[%s] graph.explanation_enhancer_node: begin", request_id)
+    _log_info(request_id, "explanation_enhancer_node", "begin")
     if result.student_explanation is not None:
-        logger.info(
-            "[%s] graph.explanation_enhancer_node: done has_explanation=%s",
+        _log_info(
             request_id,
+            "explanation_enhancer_node",
+            "done has_explanation=%s",
             True,
         )
         return {}
@@ -111,9 +114,10 @@ def explanation_enhancer_node(state: SolveGraphState) -> SolveGraphState:
         result=result,
         enhancer=state["enhancer"],
     )
-    logger.info(
-        "[%s] graph.explanation_enhancer_node: done has_explanation=%s",
+    _log_info(
         request_id,
+        "explanation_enhancer_node",
+        "done has_explanation=%s",
         new_result.student_explanation is not None,
     )
     return {"solve_result": new_result}
@@ -124,9 +128,9 @@ def note_builder_node(state: SolveGraphState) -> SolveGraphState:
 
     normalized = state["normalized"]
     request_id = str(normalized.hints.get("request_id", "unknown"))
-    logger.info("[%s] graph.note_builder_node: begin", request_id)
+    _log_info(request_id, "note_builder_node", "begin")
     note = build_note(state["solve_result"], normalized)
-    logger.info("[%s] graph.note_builder_node: done title=%s", request_id, note.title)
+    _log_info(request_id, "note_builder_node", "done title=%s", note.title)
     return {"note": note}
 
 
@@ -135,9 +139,9 @@ def format_node(state: SolveGraphState) -> SolveGraphState:
 
     normalized = state["normalized"]
     request_id = str(normalized.hints.get("request_id", "unknown"))
-    logger.info("[%s] graph.format_node: begin", request_id)
+    _log_info(request_id, "format_node", "begin")
     response = replace(format_response(normalized, state["solve_result"]), note=state.get("note"))
-    logger.info("[%s] graph.format_node: done success=%s", request_id, response.success)
+    _log_info(request_id, "format_node", "done success=%s", response.success)
     return {"response": response}
 
 
@@ -147,11 +151,19 @@ def persist_node(state: SolveGraphState) -> SolveGraphState:
     normalized = state["normalized"]
     response = state["response"]
     request_id = str(normalized.hints.get("request_id", "unknown"))
-    logger.info("[%s] graph.persist_node: begin", request_id)
+    _log_info(request_id, "persist_node", "begin")
     try:
         save_history(question=normalized, response=response)
     except PersistenceError as exc:
-        logger.warning("[%s] history save skipped: %s", request_id, exc)
+        _log_warning(request_id, "persist_node", "history save skipped: %s", exc)
         return {"persistence_error": str(exc)}
-    logger.info("[%s] graph.persist_node: done saved solve_id=%s", request_id, response.solve_id)
+    _log_info(request_id, "persist_node", "done saved solve_id=%s", response.solve_id)
     return {}
+
+
+def _log_info(request_id: str, function: str, message: str, *args: object) -> None:
+    logger.info("[%s] INFO graph.nodes.%s: " + message, request_id, function, *args)
+
+
+def _log_warning(request_id: str, function: str, message: str, *args: object) -> None:
+    logger.warning("[%s] WARNING graph.nodes.%s: " + message, request_id, function, *args)

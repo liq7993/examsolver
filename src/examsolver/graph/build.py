@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from functools import cache
-from typing import cast
+from typing import Any, cast
 
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 @cache
-def build_graph() -> CompiledStateGraph:
+def build_graph() -> CompiledStateGraph[Any, Any, Any, Any]:
     """Compile the M1 solve graph."""
 
     graph = StateGraph(SolveGraphState)
@@ -72,5 +72,10 @@ def run_solve_graph(
         return format_response(fallback, result)
 
     response = output["response"]
-    logger.info("[%s] solve graph done success=%s", response.solve_id, response.success)
+    request_id = str(output["normalized"].hints.get("request_id", "unknown"))
+    logger.info(
+        "[%s] INFO graph.build.run_solve_graph: done success=%s",
+        request_id,
+        response.success,
+    )
     return response

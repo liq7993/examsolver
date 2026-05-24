@@ -12,8 +12,8 @@ def test_normalize_node_writes_normalized_and_logs_lifecycle(caplog) -> None:
 
     assert state["normalized"].subject == "calculus"
     messages = [record.getMessage() for record in caplog.records]
-    assert any("graph.normalize_node: begin" in message for message in messages)
-    assert any("graph.normalize_node: done" in message for message in messages)
+    assert any("graph.nodes.normalize_node: begin" in message for message in messages)
+    assert any("graph.nodes.normalize_node: done" in message for message in messages)
 
 
 def test_format_node_writes_response_and_logs_lifecycle(caplog) -> None:
@@ -26,8 +26,8 @@ def test_format_node_writes_response_and_logs_lifecycle(caplog) -> None:
     assert state["response"].solve_id == "solve-1"
     assert state["response"].steps == ["识别表达式：$x^2$"]
     messages = [record.getMessage() for record in caplog.records]
-    assert any("graph.format_node: begin" in message for message in messages)
-    assert any("graph.format_node: done" in message for message in messages)
+    assert any("graph.nodes.format_node: begin" in message for message in messages)
+    assert any("graph.nodes.format_node: done" in message for message in messages)
 
 
 def test_format_node_attaches_note_when_present() -> None:
@@ -64,8 +64,8 @@ def test_persist_node_saves_response_and_logs_lifecycle(caplog) -> None:
     assert stored is not None
     assert stored.answer == "2x"
     messages = [record.getMessage() for record in caplog.records]
-    assert any("graph.persist_node: begin" in message for message in messages)
-    assert any("graph.persist_node: done" in message for message in messages)
+    assert any("graph.nodes.persist_node: begin" in message for message in messages)
+    assert any("graph.nodes.persist_node: done" in message for message in messages)
 
 
 def _normalized() -> NormalizedQuestion:

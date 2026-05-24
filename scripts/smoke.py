@@ -24,7 +24,7 @@ def main() -> None:
     parser.add_argument("question", nargs="?", default="求 x^2 对 x 的导数")
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     response = solve(SolveRequest(question=args.question))
     print(json.dumps(_to_jsonable(response), ensure_ascii=False, indent=2))
 

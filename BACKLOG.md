@@ -150,13 +150,13 @@
 
 ## M2 · LLM 抽象 + 第一颗 LLM skill
 
-### 📥 M2-01 · `llm/` 包骨架 + Protocol
+### ✅ M2-01 · `llm/` 包骨架 + Protocol
 **估时**：1 h
 **前置**：M1-09
 **出口**：
-- [ ] 新建 `src/examsolver/llm/{__init__.py,base.py,router.py}`
-- [ ] `base.py` 定义 `LLMClient` Protocol + `Message` 数据类
-- [ ] `router.py` 实现 `pick_llm(task_kind, needs_vision)`，目前返回 None（M2-02 / M2-03 填）
+- [x] 新建 `src/examsolver/llm/{__init__.py,base.py,router.py}`
+- [x] `base.py` 定义 `LLMClient` Protocol + `Message` 数据类
+- [x] `router.py` 实现 `pick_llm(task_kind, needs_vision)`，目前返回 None（M2-02 / M2-03 填）
 
 ### 📥 M2-02 · Claude client
 **估时**：2 h

@@ -20,7 +20,9 @@ KNOWN_SUBJECTS = {
     "calculus",
     "physics",
     "mechanics_eng",
+    "mechanics",
     "mechanism",
+    "linear_algebra",
     "tolerance",
     "auto_theory",
 }
@@ -73,9 +75,17 @@ def _route_with_llm(
         try:
             client = pick_llm(LLM_ROUTE_TASK, needs_vision=False)
         except Exception as exc:
-            return _unknown(f"pick_llm_failed: {exc}", fallback_reasons=("llm_router_failed",))
+            return _unknown_for_question(
+                question,
+                f"pick_llm_failed: {exc}",
+                fallback_reasons=("llm_router_failed",),
+            )
     if client is None:
-        return _unknown("No LLM router is configured.", fallback_reasons=("llm_router_unavailable",))
+        return _unknown_for_question(
+            question,
+            "No LLM router is configured.",
+            fallback_reasons=("llm_router_unavailable",),
+        )
 
     try:
         content = client.chat(
@@ -89,11 +99,19 @@ def _route_with_llm(
         decision = _decision_from_payload(payload)
     except Exception as exc:
         fallback_reasons.append("llm_router_failed")
-        return _unknown(f"LLM router failed: {exc}", fallback_reasons=tuple(fallback_reasons))
+        return _unknown_for_question(
+            question,
+            f"LLM router failed: {exc}",
+            fallback_reasons=tuple(fallback_reasons),
+        )
 
     if decision is None:
         fallback_reasons.append("llm_router_unknown")
-        return _unknown("LLM router returned unknown or unsupported route.", tuple(fallback_reasons))
+        return _unknown_for_question(
+            question,
+            "LLM router returned unknown or unsupported route.",
+            tuple(fallback_reasons),
+        )
     return decision
 
 
@@ -174,6 +192,31 @@ def _unknown(reasoning: str, fallback_reasons: tuple[str, ...]) -> RouteDecision
         reasoning=reasoning,
         fallback_reasons=fallback_reasons,
     )
+
+
+def _unknown_for_question(
+    question: NormalizedQuestion,
+    reasoning: str,
+    fallback_reasons: tuple[str, ...],
+) -> RouteDecision:
+    return RouteDecision(
+        subject=_subject_hint(question.normalized_text),
+        question_type="unknown",
+        confidence=0.0,
+        reasoning=reasoning,
+        fallback_reasons=fallback_reasons,
+    )
+
+
+def _subject_hint(text: str) -> str:
+    lowered = text.lower()
+    if any(keyword in lowered for keyword in ("h7", "g6", "配合", "公差", "tolerance", "fit")):
+        return "tolerance"
+    if any(keyword in lowered for keyword in ("齿轮", "传动比", "gear", "z1", "z2")):
+        return "mechanism"
+    if any(keyword in lowered for keyword in ("拉格朗日", "中值定理", "展开", "泰勒", "series", "taylor")):
+        return "calculus"
+    return "general"
 
 
 def _known_question_types() -> list[str]:

@@ -88,6 +88,8 @@ class ForceBalanceSkill:
     def solve(self, question: NormalizedQuestion) -> SolveResult:
         text = question.normalized_text
         intent = _detect_intent(text)
+        if _looks_like_underdetermined_third_force(text):
+            return _solve_underdetermined_third_force(text, self.name, self.version)
         if intent == "find_components":
             return _solve_components(text, self.name, self.version)
         if intent == "check_equilibrium":
@@ -223,6 +225,45 @@ def _solve_equilibrium(text: str, skill_name: str, skill_version: str) -> SolveR
     )
 
 
+def _solve_underdetermined_third_force(
+    text: str,
+    skill_name: str,
+    skill_version: str,
+) -> SolveResult:
+    magnitudes = [float(match.group("magnitude")) for match in _FORCE_QUANTITY_RE.finditer(text)]
+    first = _format_number(magnitudes[0])
+    second = _format_number(magnitudes[1])
+    answer = (
+        f"第三力需要等于前两个力的合力反向量；仅给出 {first} N 和 {second} N "
+        "而没有方向或夹角时，不能唯一确定大小。"
+    )
+    steps = [
+        Step(index=1, description=f"识别到两个已知力大小：{first} N 和 {second} N"),
+        Step(
+            index=2,
+            description="三力平衡要求三个力的矢量和为零",
+            formula_latex=r"\vec F_1+\vec F_2+\vec F_3=\vec 0",
+        ),
+        Step(
+            index=3,
+            description="因此第三力应与前两个力的合力等大反向，但还需要方向或夹角才能算出数值",
+            formula_latex=r"\vec F_3=-(\vec F_1+\vec F_2)",
+        ),
+    ]
+    return _result(
+        intent="check_equilibrium",
+        skill_name=skill_name,
+        skill_version=skill_version,
+        steps=steps,
+        answer=answer,
+        meta={
+            "mechanics.force_balance.intent": "underdetermined_third_force",
+            "mechanics.force_balance.force_count": 2,
+            "mechanics.force_balance.is_underdetermined": True,
+        },
+    )
+
+
 def _result(
     *,
     intent: Intent,
@@ -268,6 +309,15 @@ def _detect_intent(text: str) -> Intent:
     if any(keyword in lowered for keyword in ("是否平衡", "检查", "check", "equilibrium")):
         return "check_equilibrium"
     return "find_balanced_force"
+
+
+def _looks_like_underdetermined_third_force(text: str) -> bool:
+    lowered = text.lower()
+    return (
+        len(list(_FORCE_QUANTITY_RE.finditer(text))) >= 2
+        and any(keyword in lowered for keyword in ("三力", "第三力", "third force"))
+        and not any(keyword in lowered for keyword in ("向左", "向右", "向上", "向下", "°", "度", "deg"))
+    )
 
 
 def _single_force(text: str) -> Force:

@@ -19,6 +19,12 @@ from examsolver.llm.local_gguf import LocalGGUFClient
 def pick_llm(task_kind: str, needs_vision: bool) -> LLMClient | None:
     """Return the preferred LLM client for a task."""
 
+    provider = os.getenv("EXAMSOLVER_LLM_PROVIDER", "").strip().lower()
+    if provider == "claude":
+        return ClaudeClient(task_kind=task_kind)
+    if provider == "local_gguf" and task_kind in {"route", "extract_simple"} and not needs_vision:
+        return LocalGGUFClient(task_kind=task_kind)
+
     if needs_vision or task_kind in {"synthesize", "explain"}:
         return ClaudeClient(task_kind=task_kind)
     if task_kind == "general_solve":

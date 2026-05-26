@@ -120,6 +120,7 @@ def test_local_gguf_chat_with_image_is_not_supported() -> None:
 def test_router_returns_local_gguf_for_cheap_text_tasks(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.delenv("EXAMSOLVER_LLM_PROVIDER", raising=False)
     monkeypatch.setenv("EXAMSOLVER_LLM_BASE_URL", BASE_URL)
     monkeypatch.setenv("EXAMSOLVER_LLM_MODEL", "local-model")
 

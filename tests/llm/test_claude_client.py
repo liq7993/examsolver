@@ -159,12 +159,20 @@ def test_chat_with_image_sends_png_base64(monkeypatch: pytest.MonkeyPatch) -> No
 
 def test_router_returns_claude_for_cloud_tasks(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    monkeypatch.delenv("EXAMSOLVER_LLM_PROVIDER", raising=False)
 
     assert isinstance(pick_llm("synthesize", needs_vision=False), ClaudeClient)
     assert isinstance(pick_llm("explain", needs_vision=False), ClaudeClient)
     assert isinstance(pick_llm("general_solve", needs_vision=False), ClaudeClient)
     assert isinstance(pick_llm("route", needs_vision=True), ClaudeClient)
     assert isinstance(pick_llm("route", needs_vision=False), LocalGGUFClient)
+
+
+def test_router_honors_claude_provider_override(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    monkeypatch.setenv("EXAMSOLVER_LLM_PROVIDER", "claude")
+
+    assert isinstance(pick_llm("route", needs_vision=False), ClaudeClient)
 
 
 @pytest.mark.skipif(

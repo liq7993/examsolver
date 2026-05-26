@@ -148,7 +148,7 @@
 
 ---
 
-## M2 · LLM 抽象 + 第一颗 LLM skill
+## ✅ M2 · LLM 抽象 + 第一颗 LLM skill
 
 ### ✅ M2-01 · `llm/` 包骨架 + Protocol
 **估时**：1 h
@@ -215,13 +215,13 @@
 - [x] 启动时打印发现的 skill 列表（INFO log）
 - [x] 单测覆盖
 
-### 📥 M2-08 · M2 出口验收
+### ✅ M2-08 · M2 出口验收
 **估时**：30 min
 **前置**：M2-01..M2-07
 **出口**：
-- [ ] 路由准确率手测 ≥ 80%（10 条样本）
-- [ ] 切本地 LLM 路由结果与云端 ≥ 80% 一致
-- [ ] commit `M2: llm abstraction + general skill`
+- [x] 路由准确率手测 ≥ 80%（10 条样本）
+- [x] 切本地 LLM 路由结果与云端 ≥ 80% 一致
+- [x] commit `M2: llm abstraction + general skill`
 
 ---
 

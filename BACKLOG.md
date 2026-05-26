@@ -227,15 +227,15 @@
 
 ## M3 · OCR + RAG + 公差行星
 
-### 📥 M3-01 · PaddleOCR 集成
+### ✅ M3-01 · PaddleOCR 集成
 **估时**：3 h
 **前置**：M2-08
 **出口**：
-- [ ] `multimodal/ocr_paddle.py` 单例 + lazy load
-- [ ] `OCRResult` 数据类
-- [ ] 单测用一张测试图（中文 + 公式）
-- [ ] 处理一张 1024×768 图 < 3s
-- [ ] 失败抛 `OCRError`，文档说明 fallback
+- [x] `multimodal/ocr_paddle.py` 单例 + lazy load
+- [x] `OCRResult` 数据类
+- [x] 单测用一张测试图（中文 + 公式）
+- [x] 处理一张 1024×768 图 < 3s
+- [x] 失败抛 `OCRError`，文档说明 fallback
 
 ### 📥 M3-02 · `ocr_node` 集成进 graph
 **估时**：1 h

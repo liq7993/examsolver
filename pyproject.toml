@@ -39,6 +39,7 @@ pythonpath = ["src"]
 testpaths = ["tests"]
 markers = [
     "local: tests that require a local llama-server or equivalent runtime",
+    "slow: tests that exercise real local models or timing-sensitive paths",
 ]
 
 [tool.ruff]

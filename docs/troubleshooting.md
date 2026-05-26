@@ -22,6 +22,14 @@ If `uv sync` fails on Windows:
 
 Do not bypass the OCR adapter by adding Paddle-specific calls outside `src/examsolver/multimodal/`.
 
+`PaddleOCR` is lazy-loaded by `src/examsolver/multimodal/ocr_paddle.py`. Importing the
+module should not initialize or download models; the first real `recognize(...)` call owns
+that cost. The slow timing test is opt-in:
+
+```bash
+EXAMSOLVER_RUN_SLOW_OCR=1 uv run pytest tests/multimodal/ -m slow -q
+```
+
 ## uv sync on `/mnt/d`
 
 Observed during M0-02 on WSL with the project under `/mnt/d/examsolver/examsolver`:

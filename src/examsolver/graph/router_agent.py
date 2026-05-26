@@ -11,6 +11,7 @@ from examsolver.contracts import NormalizedQuestion
 from examsolver.llm.base import LLMClient, Message
 from examsolver.llm.router import pick_llm
 from examsolver.pipeline.classifier import classify
+from examsolver.skills.registry import list_skills
 
 REGEX_CONFIDENCE_THRESHOLD = 0.7
 LLM_ROUTE_TASK = "route"
@@ -25,20 +26,6 @@ KNOWN_SUBJECTS = {
 }
 KNOWN_QUESTION_TYPES = {
     "unknown",
-    "derivative",
-    "matrix_mul",
-    "force_balance",
-}
-ROUTER_SCHEMA: dict[str, object] = {
-    "type": "object",
-    "properties": {
-        "subject": {"type": "string", "enum": sorted(KNOWN_SUBJECTS)},
-        "question_type": {"type": "string", "enum": sorted(KNOWN_QUESTION_TYPES)},
-        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
-        "reasoning": {"type": "string"},
-    },
-    "required": ["subject", "question_type", "confidence", "reasoning"],
-    "additionalProperties": False,
 }
 _PROMPT_PATH = Path(__file__).with_name("prompts") / "router_agent.zh.md"
 
@@ -93,7 +80,7 @@ def _route_with_llm(
     try:
         content = client.chat(
             _route_messages(question),
-            json_schema=ROUTER_SCHEMA,
+            json_schema=_router_schema(),
             max_tokens=256,
             temperature=0.0,
             timeout=20.0,
@@ -117,7 +104,7 @@ def _route_messages(question: NormalizedQuestion) -> list[Message]:
         "normalized_text": question.normalized_text,
         "subject_hint": question.subject,
         "known_subjects": sorted(KNOWN_SUBJECTS),
-        "known_question_types": sorted(KNOWN_QUESTION_TYPES),
+        "known_question_types": _known_question_types(),
     }
     return [
         Message(role="system", content=prompt),
@@ -162,7 +149,7 @@ def _decision_from_payload(payload: dict[str, Any]) -> RouteDecision | None:
 
     if not isinstance(subject, str) or subject not in KNOWN_SUBJECTS:
         return None
-    if not isinstance(question_type, str) or question_type not in KNOWN_QUESTION_TYPES:
+    if not isinstance(question_type, str) or question_type not in set(_known_question_types()):
         return None
     if question_type == "unknown":
         return None
@@ -187,3 +174,26 @@ def _unknown(reasoning: str, fallback_reasons: tuple[str, ...]) -> RouteDecision
         reasoning=reasoning,
         fallback_reasons=fallback_reasons,
     )
+
+
+def _known_question_types() -> list[str]:
+    question_types = set(KNOWN_QUESTION_TYPES)
+    for skill in list_skills():
+        raw_types = skill.get("question_types", [])
+        if isinstance(raw_types, list):
+            question_types.update(item for item in raw_types if isinstance(item, str))
+    return sorted(question_types)
+
+
+def _router_schema() -> dict[str, object]:
+    return {
+        "type": "object",
+        "properties": {
+            "subject": {"type": "string", "enum": sorted(KNOWN_SUBJECTS)},
+            "question_type": {"type": "string", "enum": _known_question_types()},
+            "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+            "reasoning": {"type": "string"},
+        },
+        "required": ["subject", "question_type", "confidence", "reasoning"],
+        "additionalProperties": False,
+    }

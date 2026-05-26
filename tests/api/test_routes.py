@@ -64,6 +64,7 @@ def test_capabilities_route_lists_registered_skills() -> None:
     assert "mechanics.force_balance" in skill_names
     subjects = {subject.name: subject.question_types for subject in response.subjects}
     assert subjects["calculus"] == ["derivative"]
+    assert subjects["general"] == ["general", "unknown"]
     assert subjects["linear_algebra"] == ["matrix_mul"]
     assert subjects["mechanics"] == ["force_balance"]
 

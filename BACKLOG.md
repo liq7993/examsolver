@@ -206,14 +206,14 @@
 - [x] `tests/skills/general/test_cot.py` + 3 条 fixture
 - [x] `python scripts/smoke.py "汽车 ABS 起到什么作用？"` 走 general 返回结构化笔记
 
-### 📥 M2-07 · Skill registry 自动发现
+### ✅ M2-07 · Skill registry 自动发现
 **估时**：1.5 h
 **前置**：M2-06
 **出口**：
-- [ ] [`skills/registry.py`](src/examsolver/skills/registry.py) 扫描 `skills/<subject>/*.py` 找 Skill 子类
-- [ ] 提供 `get_skill(subject, question_type) -> Skill | None`
-- [ ] 启动时打印发现的 skill 列表（INFO log）
-- [ ] 单测覆盖
+- [x] [`skills/registry.py`](src/examsolver/skills/registry.py) 扫描 `skills/<subject>/*.py` 找 Skill 子类
+- [x] 提供 `get_skill(subject, question_type) -> Skill | None`
+- [x] 启动时打印发现的 skill 列表（INFO log）
+- [x] 单测覆盖
 
 ### 📥 M2-08 · M2 出口验收
 **估时**：30 min

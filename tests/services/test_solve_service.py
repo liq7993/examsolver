@@ -48,20 +48,28 @@ def test_solve_service_returns_derivative_response() -> None:
     assert stored.answer == response.answer
 
 
-def test_solve_service_unknown_is_not_exception() -> None:
+def test_solve_service_unknown_is_not_exception(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("examsolver.graph.router_agent.pick_llm", lambda *_args, **_kwargs: None)
+
     response = solve(SolveRequest(question="解释一下今天的天气"))
 
     assert response.success is False
+    assert response.subject == "general"
     assert response.question_type == "unknown"
     assert response.skill == "unknown"
     assert response.message == "当前版本尚未支持此题型。"
+    assert response.fallback_reasons == ["llm_router_unavailable"]
 
     page = list_history()
     assert len(page.items) == 1
     assert page.items[0].success is False
 
 
-def test_solve_service_can_use_optional_explanation_enhancer_for_unknown() -> None:
+def test_solve_service_can_use_optional_explanation_enhancer_for_unknown(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("examsolver.graph.router_agent.pick_llm", lambda *_args, **_kwargs: None)
+
     response = solve(SolveRequest(question="解释一下今天的天气"), enhancer=FakeEnhancer())
 
     assert response.success is False

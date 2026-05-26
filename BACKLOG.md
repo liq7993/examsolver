@@ -185,16 +185,16 @@
 - [x] 行为：根据 (task_kind, prompt_hash) 返回预录响应
 - [x] 工厂方法 `from_recorded(payload: str | dict) -> FakeLLMClient`
 
-### 📥 M2-05 · router 真路由（含 LLM 兜底）
+### ✅ M2-05 · router 真路由（含 LLM 兜底）
 **估时**：2 h
 **前置**：M2-02, M2-04
 **出口**：
-- [ ] [`graph/router_agent.py`](src/examsolver/graph/router_agent.py) 改造：
+- [x] [`graph/router_agent.py`](src/examsolver/graph/router_agent.py) 改造：
   1. 先走 regex（旧逻辑）
   2. 不命中调 `llm.router.pick_llm("route", False)` 出 JSON
   3. LLM 也无法判 → general / unknown
-- [ ] `prompts/router_agent.zh.md` 写好
-- [ ] 单测用 FakeLLM 覆盖 3 条路径
+- [x] `prompts/router_agent.zh.md` 写好
+- [x] 单测用 FakeLLM 覆盖 3 条路径
 
 ### 📥 M2-06 · 新行星 `general/` + `cot_with_textbook` skill
 **估时**：3 h

@@ -36,7 +36,7 @@ def normalize_node(state: SolveGraphState) -> SolveGraphState:
 
 
 def router_agent_node(state: SolveGraphState) -> SolveGraphState:
-    """Select a question type with the M1 deterministic router fallback."""
+    """Select a question type with regex first and an LLM fallback."""
 
     normalized = state["normalized"]
     decision = route_question(normalized)
@@ -49,12 +49,18 @@ def router_agent_node(state: SolveGraphState) -> SolveGraphState:
         decision.question_type,
         decision.confidence,
     )
-    return {
+    routed_state: SolveGraphState = {
         "subject": decision.subject,
         "question_type": decision.question_type,
         "routing_confidence": decision.confidence,
         "routing_reasoning": decision.reasoning,
     }
+    if decision.fallback_reasons:
+        routed_state["fallback_reasons"] = [
+            *state.get("fallback_reasons", []),
+            *decision.fallback_reasons,
+        ]
+    return routed_state
 
 
 def route_after_router(state: SolveGraphState) -> str:
@@ -140,7 +146,12 @@ def format_node(state: SolveGraphState) -> SolveGraphState:
     normalized = state["normalized"]
     request_id = str(normalized.hints.get("request_id", "unknown"))
     _log_info(request_id, "format_node", "begin")
-    response = replace(format_response(normalized, state["solve_result"]), note=state.get("note"))
+    response = replace(
+        format_response(normalized, state["solve_result"]),
+        subject=state.get("subject", normalized.subject),
+        note=state.get("note"),
+        fallback_reasons=state.get("fallback_reasons", []),
+    )
     _log_info(request_id, "format_node", "done success=%s", response.success)
     return {"response": response}
 

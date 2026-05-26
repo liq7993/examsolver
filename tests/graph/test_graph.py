@@ -1,3 +1,5 @@
+import pytest
+
 from examsolver.contracts import NormalizedQuestion, SolveRequest, SolveResult, Step, StudentExplanation
 from examsolver.graph import build_graph, run_solve_graph
 from examsolver.graph.nodes import (
@@ -32,7 +34,9 @@ def test_normalize_node_carries_image_paths_and_subject_hint() -> None:
     assert normalized.hints["image_count"] == 1
 
 
-def test_router_routes_unknown_to_general_path() -> None:
+def test_router_routes_unknown_to_general_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("examsolver.graph.router_agent.pick_llm", lambda *_args, **_kwargs: None)
+
     state = router_agent_node(
         {
             "normalized": NormalizedQuestion(
@@ -46,7 +50,8 @@ def test_router_routes_unknown_to_general_path() -> None:
     assert state["question_type"] == "unknown"
     assert state["subject"] == "general"
     assert state["routing_confidence"] == 0.0
-    assert "M2" in state["routing_reasoning"]
+    assert "No LLM router is configured" in state["routing_reasoning"]
+    assert state["fallback_reasons"] == ["llm_router_unavailable"]
     assert route_after_router(state) == "general"
 
 
@@ -132,12 +137,16 @@ def test_run_solve_graph_matches_existing_service_contract() -> None:
     assert stored.note.solve_id == response.solve_id
 
 
-def test_run_solve_graph_unknown_uses_general_fallback() -> None:
+def test_run_solve_graph_unknown_uses_general_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("examsolver.graph.router_agent.pick_llm", lambda *_args, **_kwargs: None)
+
     response = run_solve_graph(SolveRequest(question="解释一下今天的天气"))
 
     assert response.success is False
+    assert response.subject == "general"
     assert response.question_type == "unknown"
     assert response.skill == "unknown"
+    assert response.fallback_reasons == ["llm_router_unavailable"]
 
     page = list_history()
     assert len(page.items) == 1

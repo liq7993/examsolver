@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from threading import Lock
@@ -25,7 +26,7 @@ class PaddleOCREngine:
     def __init__(self, paddle_ocr: Any | None = None) -> None:
         self._paddle_ocr = paddle_ocr
 
-    def recognize(self, image_paths: list[str | Path]) -> OCRResult:
+    def recognize(self, image_paths: Sequence[str | Path]) -> OCRResult:
         """Run OCR over one or more image paths and merge the text blocks."""
 
         if not image_paths:
@@ -82,7 +83,7 @@ def get_engine() -> PaddleOCREngine:
     return _ENGINE
 
 
-def recognize(image_paths: list[str | Path]) -> OCRResult:
+def recognize(image_paths: Sequence[str | Path]) -> OCRResult:
     """Convenience function using the singleton engine."""
 
     return get_engine().recognize(image_paths)

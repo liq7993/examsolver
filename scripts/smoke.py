@@ -22,10 +22,17 @@ from examsolver.services.solve_service import solve  # noqa: E402
 def main() -> None:
     parser = argparse.ArgumentParser(description="Solve one question through Examsolver core.")
     parser.add_argument("question", nargs="?", default="求 x^2 对 x 的导数")
+    parser.add_argument(
+        "--image",
+        action="append",
+        default=[],
+        dest="image_paths",
+        help="Image path to include with the solve request; repeat for multiple images.",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
-    response = solve(SolveRequest(question=args.question))
+    response = solve(SolveRequest(question=args.question, image_paths=args.image_paths))
     print(json.dumps(_to_jsonable(response), ensure_ascii=False, indent=2))
 
 

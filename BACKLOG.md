@@ -237,14 +237,14 @@
 - [x] 处理一张 1024×768 图 < 3s
 - [x] 失败抛 `OCRError`，文档说明 fallback
 
-### 📥 M3-02 · `ocr_node` 集成进 graph
+### ✅ M3-02 · `ocr_node` 集成进 graph
 **估时**：1 h
 **前置**：M3-01
 **出口**：
-- [ ] `graph/nodes.py` 加 `ocr_node`
-- [ ] 仅 `state.image_paths` 非空时执行
-- [ ] 失败 append fallback_reasons 继续
-- [ ] `graph/build.py` 加条件边
+- [x] `graph/nodes.py` 加 `ocr_node`
+- [x] 仅 `state.image_paths` 非空时执行
+- [x] 失败 append fallback_reasons 继续
+- [x] `graph/build.py` 加条件边
 
 ### 📥 M3-03 · sentence-transformers embedder
 **估时**：1.5 h

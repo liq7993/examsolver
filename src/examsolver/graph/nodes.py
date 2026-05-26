@@ -8,6 +8,8 @@ from dataclasses import replace
 from examsolver.graph.router_agent import route_question
 from examsolver.graph.state import SolveGraphState
 from examsolver.llm.router import pick_llm
+from examsolver.multimodal import OCRError
+from examsolver.multimodal.ocr_paddle import recognize
 from examsolver.notes.note_builder import build_note
 from examsolver.pipeline.dispatcher import dispatch
 from examsolver.pipeline.formatter import format_response
@@ -35,6 +37,52 @@ def normalize_node(state: SolveGraphState) -> SolveGraphState:
         len(normalized.image_paths),
     )
     return {"normalized": normalized}
+
+
+def has_images(state: SolveGraphState) -> str:
+    """Route image-bearing requests through OCR before routing."""
+
+    return "ocr" if state["normalized"].image_paths else "router_agent"
+
+
+def ocr_node(state: SolveGraphState) -> SolveGraphState:
+    """Run OCR for image-backed requests without blocking text-only solving."""
+
+    normalized = state["normalized"]
+    request_id = str(normalized.hints.get("request_id", "unknown"))
+    if not normalized.image_paths:
+        _log_info(request_id, "ocr_node", "skip images=0")
+        return {}
+
+    _log_info(request_id, "ocr_node", "begin images=%s", len(normalized.image_paths))
+    try:
+        result = recognize(normalized.image_paths)
+    except OCRError as exc:
+        _log_warning(request_id, "ocr_node", "fallback ocr_failed: %s", exc)
+        return {
+            "fallback_reasons": [
+                *state.get("fallback_reasons", []),
+                f"ocr_failed:{exc}",
+            ]
+        }
+    except Exception as exc:
+        _log_warning(request_id, "ocr_node", "fallback ocr_failed: %s", exc)
+        return {
+            "fallback_reasons": [
+                *state.get("fallback_reasons", []),
+                f"ocr_failed:{exc}",
+            ]
+        }
+
+    _log_info(
+        request_id,
+        "ocr_node",
+        "done chars=%s bboxes=%s confidence=%.2f",
+        len(result.text),
+        len(result.bboxes),
+        result.confidence,
+    )
+    return {"ocr_text": result.text, "ocr_bboxes": result.bboxes}
 
 
 def router_agent_node(state: SolveGraphState) -> SolveGraphState:

@@ -14,8 +14,10 @@ from examsolver.graph.nodes import (
     explanation_enhancer_node,
     format_node,
     general_node,
+    has_images,
     normalize_node,
     note_builder_node,
+    ocr_node,
     persist_node,
     route_after_router,
     router_agent_node,
@@ -37,6 +39,7 @@ def build_graph() -> CompiledStateGraph[Any, Any, Any, Any]:
 
     graph = StateGraph(SolveGraphState)
     graph.add_node("normalize", normalize_node)
+    graph.add_node("ocr", ocr_node)
     graph.add_node("router_agent", router_agent_node)
     graph.add_node("skill", skill_node)
     graph.add_node("general", general_node)
@@ -46,7 +49,12 @@ def build_graph() -> CompiledStateGraph[Any, Any, Any, Any]:
     graph.add_node("persist", persist_node)
 
     graph.add_edge(START, "normalize")
-    graph.add_edge("normalize", "router_agent")
+    graph.add_conditional_edges(
+        "normalize",
+        has_images,
+        {"ocr": "ocr", "router_agent": "router_agent"},
+    )
+    graph.add_edge("ocr", "router_agent")
     graph.add_conditional_edges(
         "router_agent",
         route_after_router,

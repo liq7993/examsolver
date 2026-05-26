@@ -53,7 +53,7 @@ def test_chat_posts_messages_and_returns_text(monkeypatch: pytest.MonkeyPatch) -
 @respx.mock
 def test_chat_uses_tool_choice_for_json_schema(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
-    schema = {
+    schema: dict[str, object] = {
         "type": "object",
         "properties": {"answer": {"type": "string"}},
         "required": ["answer"],

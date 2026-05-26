@@ -47,7 +47,7 @@ def test_local_gguf_chat_adds_json_schema_response_format(
 ) -> None:
     monkeypatch.setenv("EXAMSOLVER_LLM_BASE_URL", BASE_URL)
     monkeypatch.setenv("EXAMSOLVER_LLM_MODEL", "local-model")
-    schema = {
+    schema: dict[str, object] = {
         "type": "object",
         "properties": {"answer": {"type": "string"}},
         "required": ["answer"],

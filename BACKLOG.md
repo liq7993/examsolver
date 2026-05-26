@@ -177,13 +177,13 @@
 - [x] JSON 输出用 grammar / json_schema_strict
 - [x] 测试用本地起 llama-server（可标 `@pytest.mark.local`）
 
-### 📥 M2-04 · FakeLLMClient（测试用）
+### ✅ M2-04 · FakeLLMClient（测试用）
 **估时**：1 h
 **前置**：M2-01
 **出口**：
-- [ ] `tests/_helpers/fake_llm.py` 实现 `FakeLLMClient`
-- [ ] 行为：根据 (task_kind, prompt_hash) 返回预录响应
-- [ ] 工厂方法 `from_recorded(payload: str | dict) -> FakeLLMClient`
+- [x] `tests/_helpers/fake_llm.py` 实现 `FakeLLMClient`
+- [x] 行为：根据 (task_kind, prompt_hash) 返回预录响应
+- [x] 工厂方法 `from_recorded(payload: str | dict) -> FakeLLMClient`
 
 ### 📥 M2-05 · router 真路由（含 LLM 兜底）
 **估时**：2 h

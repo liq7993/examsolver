@@ -1,11 +1,15 @@
 import logging
 
+from pytest import LogCaptureFixture
+
 from examsolver.contracts import NormalizedQuestion, NoteEntry, SolveRequest, SolveResult, Step
 from examsolver.graph.nodes import format_node, normalize_node, persist_node
 from examsolver.storage.history_repo import get_response
 
 
-def test_normalize_node_writes_normalized_and_logs_lifecycle(caplog) -> None:
+def test_normalize_node_writes_normalized_and_logs_lifecycle(
+    caplog: LogCaptureFixture,
+) -> None:
     caplog.set_level(logging.INFO, logger="examsolver.graph.nodes")
 
     state = normalize_node({"request": SolveRequest(question="求 x^2 对 x 的导数")})
@@ -16,7 +20,7 @@ def test_normalize_node_writes_normalized_and_logs_lifecycle(caplog) -> None:
     assert any("graph.nodes.normalize_node: done" in message for message in messages)
 
 
-def test_format_node_writes_response_and_logs_lifecycle(caplog) -> None:
+def test_format_node_writes_response_and_logs_lifecycle(caplog: LogCaptureFixture) -> None:
     caplog.set_level(logging.INFO, logger="examsolver.graph.nodes")
     normalized = _normalized()
     result = _result()
@@ -52,7 +56,7 @@ def test_format_node_attaches_note_when_present() -> None:
     assert state["response"].note == note
 
 
-def test_persist_node_saves_response_and_logs_lifecycle(caplog) -> None:
+def test_persist_node_saves_response_and_logs_lifecycle(caplog: LogCaptureFixture) -> None:
     caplog.set_level(logging.INFO, logger="examsolver.graph.nodes")
     normalized = _normalized()
     response = format_node({"normalized": normalized, "solve_result": _result()})["response"]

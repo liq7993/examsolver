@@ -1,4 +1,7 @@
+import json
 from typing import Any
+
+import pytest
 
 from examsolver.llm import LLMClient, Message, pick_llm
 
@@ -51,5 +54,19 @@ def test_llm_client_protocol_shape_accepts_fake_client() -> None:
     assert client.chat_with_image(messages, [b"image"]) == "ping"
 
 
-def test_pick_llm_returns_none_until_clients_are_registered() -> None:
-    assert pick_llm("general_solve", needs_vision=False) is None
+def test_pick_llm_returns_none_for_unknown_task() -> None:
+    assert pick_llm("unknown_task", needs_vision=False) is None
+
+
+def test_pick_llm_returns_offline_general_client_without_cloud_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+    client = pick_llm("general_solve", needs_vision=False)
+
+    assert client is not None
+    payload = json.loads(client.chat([Message(role="user", content="汽车 ABS 起到什么作用？")]))
+    assert payload["steps"]
+    assert payload["answer"]
+    assert payload["common_mistakes"]

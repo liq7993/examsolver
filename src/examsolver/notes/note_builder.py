@@ -15,7 +15,7 @@ def build_note(solve_result: SolveResult, normalized: NormalizedQuestion) -> Not
         steps=solve_result.steps,
         answer=solve_result.answer,
         student_explanation=solve_result.student_explanation,
-        common_mistakes=[],
+        common_mistakes=_common_mistakes(solve_result),
         related_formulas=[],
         flashcards=[],
         citations=solve_result.citations,
@@ -27,3 +27,10 @@ def build_note(solve_result: SolveResult, normalized: NormalizedQuestion) -> Not
 def _note_title(text: str) -> str:
     compact = " ".join(text.split())
     return compact[:32] or "未命名题目"
+
+
+def _common_mistakes(solve_result: SolveResult) -> list[str]:
+    mistakes = solve_result.meta.get("common_mistakes", [])
+    if not isinstance(mistakes, list):
+        return []
+    return [mistake for mistake in mistakes if isinstance(mistake, str)]

@@ -125,7 +125,7 @@ def test_router_returns_local_gguf_for_cheap_text_tasks(
 
     assert isinstance(pick_llm("route", needs_vision=False), LocalGGUFClient)
     assert isinstance(pick_llm("extract_simple", needs_vision=False), LocalGGUFClient)
-    assert pick_llm("general_solve", needs_vision=False) is None
+    assert pick_llm("unknown_task", needs_vision=False) is None
 
 
 @pytest.mark.local

@@ -162,6 +162,7 @@ def test_router_returns_claude_for_cloud_tasks(monkeypatch: pytest.MonkeyPatch) 
 
     assert isinstance(pick_llm("synthesize", needs_vision=False), ClaudeClient)
     assert isinstance(pick_llm("explain", needs_vision=False), ClaudeClient)
+    assert isinstance(pick_llm("general_solve", needs_vision=False), ClaudeClient)
     assert isinstance(pick_llm("route", needs_vision=True), ClaudeClient)
     assert isinstance(pick_llm("route", needs_vision=False), LocalGGUFClient)
 

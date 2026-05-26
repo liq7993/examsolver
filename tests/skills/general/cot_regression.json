@@ -1,0 +1,50 @@
+[
+  {
+    "name": "abs_concept",
+    "question": "汽车 ABS 起到什么作用？",
+    "llm_response": {
+      "thinking": "ABS 的核心是防止制动时车轮抱死。",
+      "steps": [
+        {"description": "识别题目询问 ABS 的功能", "formula_latex": null},
+        {"description": "说明 ABS 通过调节制动压力保持车轮滚动", "formula_latex": null},
+        {"description": "归纳效果：保持转向能力和方向稳定性", "formula_latex": null}
+      ],
+      "answer": "ABS 用于紧急制动时防止车轮抱死，使车辆仍能保持转向能力和方向稳定性，提高制动安全。",
+      "common_mistakes": ["不要把 ABS 理解为单纯增大制动力。"]
+    },
+    "expected_answer_contains": "防止车轮抱死",
+    "expected_step_count": 3
+  },
+  {
+    "name": "study_method",
+    "question": "如何复习工程力学中的受力分析？",
+    "llm_response": {
+      "thinking": "复习受力分析要围绕对象、约束和方程三步。",
+      "steps": [
+        {"description": "先隔离研究对象并画受力图", "formula_latex": null},
+        {"description": "识别重力、支持力、拉力和摩擦力等约束力", "formula_latex": null},
+        {"description": "用平衡方程检查遗漏", "formula_latex": "\\sum F=0"}
+      ],
+      "answer": "复习时先训练画受力图，再按约束类型补全力，最后用平衡方程检查每个方向是否闭合。",
+      "common_mistakes": ["不要一上来列方程而忽略受力图。"]
+    },
+    "expected_answer_contains": "受力图",
+    "expected_step_count": 3
+  },
+  {
+    "name": "concept_gap",
+    "question": "为什么需要公差？",
+    "llm_response": {
+      "thinking": "公差用于处理制造误差和装配要求之间的矛盾。",
+      "steps": [
+        {"description": "说明实际加工不可能完全等于理论尺寸", "formula_latex": null},
+        {"description": "说明公差规定允许变化范围", "formula_latex": null}
+      ],
+      "answer": "公差规定零件尺寸或形位允许变化的范围，使制造可实现、装配可互换，并保证功能要求。",
+      "common_mistakes": ["不要把公差理解成加工错误；它是允许误差范围。"]
+    },
+    "expected_answer_contains": "允许变化",
+    "expected_step_count": 2
+  }
+]
+

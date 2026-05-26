@@ -7,12 +7,14 @@ from dataclasses import replace
 
 from examsolver.graph.router_agent import route_question
 from examsolver.graph.state import SolveGraphState
+from examsolver.llm.router import pick_llm
 from examsolver.notes.note_builder import build_note
 from examsolver.pipeline.dispatcher import dispatch
 from examsolver.pipeline.formatter import format_response
 from examsolver.pipeline.normalizer import normalize
 from examsolver.services.explanation import enhance_if_needed
 from examsolver.skills.base import PersistenceError
+from examsolver.skills.general import CotWithTextbookSkill
 from examsolver.skills.registry import unknown_skill
 from examsolver.storage.history_repo import save_history
 
@@ -90,11 +92,21 @@ def skill_node(state: SolveGraphState) -> SolveGraphState:
 
 
 def general_node(state: SolveGraphState) -> SolveGraphState:
-    """M1 general fallback path for unsupported questions."""
+    """Run the general Type-L fallback skill for unsupported questions."""
 
     normalized = state["normalized"]
     request_id = str(normalized.hints.get("request_id", "unknown"))
-    result = unknown_skill().solve(normalized)
+    try:
+        llm = pick_llm("general_solve", needs_vision=False)
+        result = CotWithTextbookSkill().solve(normalized, llm=llm)
+    except Exception as exc:
+        _log_warning(request_id, "general_node", "fallback general_skill_failed: %s", exc)
+        result = unknown_skill().solve(normalized)
+        fallback_reasons = [*state.get("fallback_reasons", []), "general_skill_failed"]
+        return {
+            "solve_result": result,
+            "fallback_reasons": fallback_reasons,
+        }
     _log_info(request_id, "general_node", "skill=%s", result.skill)
     return {"solve_result": result}
 
@@ -135,7 +147,7 @@ def note_builder_node(state: SolveGraphState) -> SolveGraphState:
     normalized = state["normalized"]
     request_id = str(normalized.hints.get("request_id", "unknown"))
     _log_info(request_id, "note_builder_node", "begin")
-    note = build_note(state["solve_result"], normalized)
+    note = replace(build_note(state["solve_result"], normalized), subject=state.get("subject", normalized.subject))
     _log_info(request_id, "note_builder_node", "done title=%s", note.title)
     return {"note": note}
 

@@ -196,15 +196,15 @@
 - [x] `prompts/router_agent.zh.md` 写好
 - [x] 单测用 FakeLLM 覆盖 3 条路径
 
-### 📥 M2-06 · 新行星 `general/` + `cot_with_textbook` skill
+### ✅ M2-06 · 新行星 `general/` + `cot_with_textbook` skill
 **估时**：3 h
 **前置**：M2-02
 **出口**：
-- [ ] `skills/general/_meta.py`
-- [ ] `skills/general/cot_with_textbook.py`（Type-L）
-- [ ] `skills/general/prompts/cot_with_textbook.zh.md`
-- [ ] `tests/skills/general/test_cot.py` + 3 条 fixture
-- [ ] `python scripts/smoke.py "汽车 ABS 起到什么作用？"` 走 general 返回结构化笔记
+- [x] `skills/general/_meta.py`
+- [x] `skills/general/cot_with_textbook.py`（Type-L）
+- [x] `skills/general/prompts/cot_with_textbook.zh.md`
+- [x] `tests/skills/general/test_cot.py` + 3 条 fixture
+- [x] `python scripts/smoke.py "汽车 ABS 起到什么作用？"` 走 general 返回结构化笔记
 
 ### 📥 M2-07 · Skill registry 自动发现
 **估时**：1.5 h

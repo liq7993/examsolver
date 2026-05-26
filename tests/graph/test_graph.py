@@ -137,17 +137,18 @@ def test_run_solve_graph_matches_existing_service_contract() -> None:
     assert stored.note.solve_id == response.solve_id
 
 
-def test_run_solve_graph_unknown_uses_general_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_run_solve_graph_unknown_uses_general_cot_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("examsolver.graph.router_agent.pick_llm", lambda *_args, **_kwargs: None)
 
     response = run_solve_graph(SolveRequest(question="解释一下今天的天气"))
 
-    assert response.success is False
+    assert response.success is True
     assert response.subject == "general"
     assert response.question_type == "unknown"
-    assert response.skill == "unknown"
+    assert response.skill == "general.cot_with_textbook"
     assert response.fallback_reasons == ["llm_router_unavailable"]
+    assert response.answer is not None
 
     page = list_history()
     assert len(page.items) == 1
-    assert page.items[0].success is False
+    assert page.items[0].success is True

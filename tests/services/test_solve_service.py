@@ -53,16 +53,16 @@ def test_solve_service_unknown_is_not_exception(monkeypatch: pytest.MonkeyPatch)
 
     response = solve(SolveRequest(question="解释一下今天的天气"))
 
-    assert response.success is False
+    assert response.success is True
     assert response.subject == "general"
     assert response.question_type == "unknown"
-    assert response.skill == "unknown"
-    assert response.message == "当前版本尚未支持此题型。"
+    assert response.skill == "general.cot_with_textbook"
+    assert response.message == "已完成通用结构化解答。"
     assert response.fallback_reasons == ["llm_router_unavailable"]
 
     page = list_history()
     assert len(page.items) == 1
-    assert page.items[0].success is False
+    assert page.items[0].success is True
 
 
 def test_solve_service_can_use_optional_explanation_enhancer_for_unknown(
@@ -72,12 +72,12 @@ def test_solve_service_can_use_optional_explanation_enhancer_for_unknown(
 
     response = solve(SolveRequest(question="解释一下今天的天气"), enhancer=FakeEnhancer())
 
-    assert response.success is False
+    assert response.success is True
     assert response.question_type == "unknown"
-    assert response.skill == "unknown"
-    assert response.answer is None
+    assert response.skill == "general.cot_with_textbook"
+    assert response.answer is not None
     assert response.student_explanation is not None
-    assert response.student_explanation.summary == "Gemma explanation for 解释一下今天的天气"
+    assert response.student_explanation.summary
 
 
 def test_solve_service_returns_matrix_mul_response() -> None:

@@ -51,7 +51,7 @@ def _infer_subject(text: str) -> str:
         return "calculus"
     if any(keyword in lowered for keyword in ("矩阵", "matrix")):
         return "linear_algebra"
-    if any(keyword in lowered for keyword in ("配合", "公差", "h7", "g6", "tolerance", "fit")):
+    if any(keyword in lowered for keyword in ("配合", "公差", "基本偏差", "h7", "g6", "tolerance", "fit")):
         return "tolerance"
     if any(
         keyword in lowered

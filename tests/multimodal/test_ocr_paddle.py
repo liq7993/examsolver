@@ -14,6 +14,7 @@ from examsolver.multimodal import ocr_paddle
 from examsolver.multimodal.ocr_paddle import OCRResult, PaddleOCREngine
 
 FIXTURE = Path(__file__).parents[1] / "fixtures" / "ocr" / "sample_zh.png"
+HANDWRITTEN_FIXTURE = Path(__file__).parents[1] / "fixtures" / "ocr" / "handwritten_formula.png"
 
 
 class FakePaddleOCR:
@@ -98,7 +99,20 @@ def test_singleton_is_lazy(monkeypatch: pytest.MonkeyPatch) -> None:
         def __init__(self, **kwargs: object) -> None:
             nonlocal constructed
             constructed += 1
-            assert kwargs == {"use_angle_cls": True, "lang": "ch"}
+            assert kwargs["use_doc_orientation_classify"] is False
+            assert kwargs["use_doc_unwarping"] is False
+            assert kwargs["use_textline_orientation"] is False
+            assert kwargs["device"] == "cpu"
+            assert kwargs["engine"] == "paddle_static"
+            assert kwargs["enable_mkldnn"] is False
+            assert kwargs["engine_config"] == {
+                "paddle_static": {
+                    "run_mode": "paddle",
+                    "enable_new_ir": False,
+                    "enable_cinn": False,
+                    "cpu_threads": 1,
+                },
+            }
 
         def ocr(self, image_path: str) -> list[list[Any]]:
             return [[[[[0, 0], [1, 0], [1, 1], [0, 1]], ("lazy", 1.0)]]]
@@ -125,10 +139,10 @@ def test_singleton_is_lazy(monkeypatch: pytest.MonkeyPatch) -> None:
 )
 def test_real_paddleocr_processes_1024x768_under_three_seconds_after_warmup() -> None:
     engine = ocr_paddle.get_engine()
-    engine.recognize([FIXTURE])
+    engine.recognize([HANDWRITTEN_FIXTURE])
 
     started = time.perf_counter()
-    result = engine.recognize([FIXTURE])
+    result = engine.recognize([HANDWRITTEN_FIXTURE])
     elapsed = time.perf_counter() - started
 
     assert elapsed < 3.0

@@ -6,7 +6,7 @@ from typing import Any, cast
 
 import pytest
 
-from _helpers.fake_llm import FakeLLMClient  # type: ignore[import-not-found]
+from _helpers.fake_llm import FakeLLMClient
 from examsolver.contracts import SolveRequest
 from examsolver.pipeline.classifier import classify
 from examsolver.pipeline.normalizer import normalize
@@ -82,6 +82,7 @@ def test_fit_type_declares_type_h_capabilities() -> None:
     assert question.subject == "tolerance"
     assert classify(question) == "fit_type"
     assert classify(normalize(SolveRequest(question="H7/g6"))) == "fit_type"
+    assert classify(normalize(SolveRequest(question="请说明孔的基本偏差代号 H 和轴的 h 区别"))) == "fit_type"
 
 
 @pytest.mark.parametrize("case", _cases(), ids=lambda case: str(case["name"]))
@@ -113,6 +114,17 @@ def test_fit_type_regex_fallback_supports_smoke_without_llm() -> None:
     result = FitTypeSkill().solve(question, rag_retrieve=_fake_chunks)
 
     assert result.answer == "H7/g6 属于间隙配合"
+    assert result.citations
+
+
+def test_fit_type_regex_fallback_supports_bare_h_and_h() -> None:
+    question = normalize(SolveRequest(question="请说明孔的基本偏差代号 H 和轴的 h 区别"))
+
+    result = FitTypeSkill().solve(question, rag_retrieve=_fake_chunks)
+
+    assert result.answer == "H/h 属于间隙配合"
+    assert result.meta["tolerance.fit_type.hole_symbol"] == "H"
+    assert result.meta["tolerance.fit_type.shaft_symbol"] == "h"
     assert result.citations
 
 

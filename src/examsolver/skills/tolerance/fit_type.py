@@ -28,7 +28,8 @@ EXTRACT_SCHEMA: dict[str, object] = {
     "additionalProperties": False,
 }
 _PROMPT_PATH = Path(__file__).with_name("prompts") / "fit_type_extract.zh.md"
-_SYMBOL_PATTERN = re.compile(r"\b([A-Za-z])\s*(\d{1,2})\b")
+_GRADED_SYMBOL_PATTERN = re.compile(r"\b([A-Za-z])\s*(\d{1,2})\b")
+_BARE_HOLE_SHAFT_PATTERN = re.compile(r"\b([HhGgKk])\b")
 RagRetrieve = Callable[[str, str, int], list[TextbookChunk]]
 
 
@@ -45,7 +46,10 @@ class FitTypeSkill:
 
     def can_handle(self, question: NormalizedQuestion) -> bool:
         text = question.normalized_text.lower()
-        return any(keyword in text for keyword in ("配合", "公差", "h7", "g6", "fit", "tolerance"))
+        return any(
+            keyword in text
+            for keyword in ("配合", "公差", "基本偏差", "h7", "g6", "fit", "tolerance")
+        )
 
     def solve(
         self,
@@ -165,7 +169,10 @@ def _extract_with_llm(
 
 
 def _extract_with_regex(text: str) -> dict[str, str]:
-    symbols = [f"{letter}{grade}" for letter, grade in _SYMBOL_PATTERN.findall(text.replace("／", "/"))]
+    normalized = text.replace("／", "/")
+    symbols = [f"{letter}{grade}" for letter, grade in _GRADED_SYMBOL_PATTERN.findall(normalized)]
+    if not symbols:
+        symbols = _BARE_HOLE_SHAFT_PATTERN.findall(normalized)
     hole = next((symbol for symbol in symbols if symbol[0].isupper()), None)
     shaft = next((symbol for symbol in symbols if symbol[0].islower()), None)
     if hole is None or shaft is None:

@@ -225,7 +225,7 @@
 
 ---
 
-## M3 · OCR + RAG + 公差行星
+## ✅ M3 · OCR + RAG + 公差行星
 
 ### ✅ M3-01 · PaddleOCR 集成
 **估时**：3 h
@@ -308,13 +308,13 @@
 - [ ] `api/routes/library.py` 加 `GET /library` `POST /library/upload` `POST /library/index/{id}` `DELETE /library/{id}`
 - [ ] `storage/documents_repo.py`
 
-### 📥 M3-10 · M3 出口验收
+### ✅ M3-10 · M3 出口验收
 **估时**：30 min
 **前置**：M3-01..M3-09
 **出口**：
-- [ ] 用户能上传公差教材并索引
-- [ ] "H7/g6 是什么配合？" 返回 citations ≥ 1
-- [ ] commit `M3: ocr + rag + tolerance planet`
+- [x] 用户能上传公差教材并索引
+- [x] "H7/g6 是什么配合？" 返回 citations ≥ 1
+- [x] commit `M3: ocr + rag + tolerance planet`
 
 ---
 

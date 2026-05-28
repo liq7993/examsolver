@@ -60,9 +60,10 @@ def _looks_like_force_balance(text: str) -> bool:
 
 def _looks_like_fit_type(text: str) -> bool:
     has_fit_pair = re.search(r"\b[a-z]\s*\d{1,2}\s*[/／-]\s*[a-z]\s*\d{1,2}\b", text) is not None
-    has_tolerance_word = any(keyword in text for keyword in ("配合", "公差", "fit", "tolerance"))
+    has_tolerance_word = any(keyword in text for keyword in ("配合", "公差", "基本偏差", "fit", "tolerance"))
+    asks_hole_shaft_symbol = "孔" in text and "轴" in text and "代号" in text
     has_symbol = re.search(r"\b[A-Za-z]\s*\d{1,2}\b", text) is not None
-    return has_fit_pair or (has_tolerance_word and has_symbol)
+    return has_fit_pair or (has_tolerance_word and has_symbol) or asks_hole_shaft_symbol
 
 
 def _without_latex_noise(text: str) -> str:

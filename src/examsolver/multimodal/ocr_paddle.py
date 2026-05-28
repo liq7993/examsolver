@@ -10,6 +10,27 @@ from typing import Any, cast
 
 from examsolver.multimodal import OCRError
 
+_PADDLEOCR_CONFIG: dict[str, Any] = {
+    "use_doc_orientation_classify": False,
+    "use_doc_unwarping": False,
+    "use_textline_orientation": False,
+    "text_detection_model_name": "PP-OCRv5_mobile_det",
+    "text_recognition_model_name": "PP-OCRv5_mobile_rec",
+    "device": "cpu",
+    "engine": "paddle_static",
+    "engine_config": {
+        "paddle_static": {
+            "run_mode": "paddle",
+            "enable_new_ir": False,
+            "enable_cinn": False,
+            "cpu_threads": 1,
+        },
+    },
+    "enable_mkldnn": False,
+    "enable_cinn": False,
+    "cpu_threads": 1,
+}
+
 
 @dataclass(frozen=True, slots=True)
 class OCRResult:
@@ -62,7 +83,7 @@ class PaddleOCREngine:
             except Exception as exc:
                 raise OCRError("PaddleOCR is not importable") from exc
             try:
-                self._paddle_ocr = PaddleOCR(use_angle_cls=True, lang="ch")
+                self._paddle_ocr = PaddleOCR(**_PADDLEOCR_CONFIG)
             except Exception as exc:
                 raise OCRError("PaddleOCR model initialization failed") from exc
         return self._paddle_ocr

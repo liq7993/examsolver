@@ -255,14 +255,14 @@
 - [x] 接口：`embed(text: str) -> list[float]` / `embed_batch(texts) -> list[list[float]]`
 - [x] 单测 happy path + 维度断言
 
-### 📥 M3-04 · sqlite-vec 向量存储
+### ✅ M3-04 · sqlite-vec 向量存储
 **估时**：2 h
 **前置**：M3-03
 **出口**：
-- [ ] `rag/store_sqlite_vec.py` 建表 + 写入
-- [ ] 与现有 SQLite 同文件
-- [ ] `documents` 表 + `chunks` 表 + `chunk_vec` 虚表
-- [ ] 单测覆盖建表 + 插入 + 检索
+- [x] `rag/store_sqlite_vec.py` 建表 + 写入
+- [x] 与现有 SQLite 同文件
+- [x] `documents` 表 + `chunks` 表 + `chunk_vec` 虚表
+- [x] 单测覆盖建表 + 插入 + 检索
 
 ### 📥 M3-05 · Chunker
 **估时**：1.5 h

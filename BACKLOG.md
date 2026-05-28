@@ -289,16 +289,16 @@
 - [x] 流程：pypdf 读 → 失败回退 PaddleOCR → chunk → embed → 写库
 - [x] 实测对一本 PDF 教材索引完成 ≥ 50 chunks
 
-### 📥 M3-08 · 新行星 `tolerance/` + `fit_type` skill
+### ✅ M3-08 · 新行星 `tolerance/` + `fit_type` skill
 **估时**：3 h
 **前置**：M3-06
 **出口**：
-- [ ] `skills/tolerance/{_meta.py,_tables.py,fit_type.py}`
-- [ ] `_tables.py` 内置 ISO 286 简表（基本偏差查表）
-- [ ] `fit_type.py` Type-H，`needs_rag=True`
-- [ ] prompt 模板 `prompts/fit_type_extract.zh.md`
-- [ ] 5 条 fixture
-- [ ] `python scripts/smoke.py "H7/g6 是什么配合？"` 走通
+- [x] `skills/tolerance/{_meta.py,_tables.py,fit_type.py}`
+- [x] `_tables.py` 内置 ISO 286 简表（基本偏差查表）
+- [x] `fit_type.py` Type-H，`needs_rag=True`
+- [x] prompt 模板 `prompts/fit_type_extract.zh.md`
+- [x] 5 条 fixture
+- [x] `python scripts/smoke.py "H7/g6 是什么配合？"` 走通
 
 ### 📥 M3-09 · `rag_retrieve_node` + Library API
 **估时**：2 h

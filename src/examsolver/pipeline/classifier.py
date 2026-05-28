@@ -19,6 +19,7 @@ def classify(question: NormalizedQuestion) -> str:
         ("derivative", _looks_like_derivative),
         ("matrix_mul", _looks_like_matrix_multiplication),
         ("force_balance", _looks_like_force_balance),
+        ("fit_type", _looks_like_fit_type),
     ]
     for question_type, predicate in rules:
         if predicate(text):
@@ -55,6 +56,13 @@ def _looks_like_force_balance(text: str) -> bool:
         )
     )
     return has_force_quantity and has_intent and (has_force_word or "平衡" in text)
+
+
+def _looks_like_fit_type(text: str) -> bool:
+    has_fit_pair = re.search(r"\b[a-z]\s*\d{1,2}\s*[/／-]\s*[a-z]\s*\d{1,2}\b", text) is not None
+    has_tolerance_word = any(keyword in text for keyword in ("配合", "公差", "fit", "tolerance"))
+    has_symbol = re.search(r"\b[A-Za-z]\s*\d{1,2}\b", text) is not None
+    return has_fit_pair or (has_tolerance_word and has_symbol)
 
 
 def _without_latex_noise(text: str) -> str:

@@ -1,0 +1,37 @@
+[
+  {
+    "name": "H7_g6_clearance",
+    "question": "H7/g6 是什么配合？",
+    "llm_response": {"hole_symbol": "H7", "shaft_symbol": "g6"},
+    "expected_fit_type": "间隙",
+    "expected_answer_contains": "H7/g6 属于间隙配合"
+  },
+  {
+    "name": "H7_h6_clearance",
+    "question": "H7/h6 的配合类型如何判断？",
+    "llm_response": {"hole_symbol": "H7", "shaft_symbol": "h6"},
+    "expected_fit_type": "间隙",
+    "expected_answer_contains": "H7/h6 属于间隙配合"
+  },
+  {
+    "name": "H7_k6_transition",
+    "question": "H7/k6 是间隙配合还是过渡配合？",
+    "llm_response": {"hole_symbol": "H7", "shaft_symbol": "k6"},
+    "expected_fit_type": "过渡",
+    "expected_answer_contains": "H7/k6 属于过渡配合"
+  },
+  {
+    "name": "K7_h6_transition",
+    "question": "K7/h6 的孔轴配合类型是什么？",
+    "llm_response": {"hole_symbol": "K7", "shaft_symbol": "h6"},
+    "expected_fit_type": "过渡",
+    "expected_answer_contains": "K7/h6 属于过渡配合"
+  },
+  {
+    "name": "G7_g6_clearance",
+    "question": "G7/g6 应判为什么配合？",
+    "llm_response": {"hole_symbol": "G7", "shaft_symbol": "g6"},
+    "expected_fit_type": "间隙",
+    "expected_answer_contains": "G7/g6 属于间隙配合"
+  }
+]

@@ -272,13 +272,13 @@
 - [x] 尊重段落 / 标题分隔
 - [x] 单测：长文本切分预期数 / 重叠量
 
-### 📥 M3-06 · Retriever
+### ✅ M3-06 · Retriever
 **估时**：1.5 h
 **前置**：M3-04
 **出口**：
-- [ ] `rag/retriever.py` `retrieve(query, subject, top_k=5) -> list[TextbookChunk]`
-- [ ] cosine distance threshold 0.5
-- [ ] 单测覆盖命中 / 不命中 / 跨学科隔离
+- [x] `rag/retriever.py` `retrieve(query, subject, top_k=5) -> list[TextbookChunk]`
+- [x] cosine distance threshold 0.5
+- [x] 单测覆盖命中 / 不命中 / 跨学科隔离
 
 ### 📥 M3-07 · `index_textbook.py` 脚本
 **估时**：2 h

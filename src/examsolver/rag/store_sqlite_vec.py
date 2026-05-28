@@ -60,6 +60,18 @@ class TextbookChunk:
     distance: float
 
 
+@dataclass(frozen=True, slots=True)
+class IndexedDocument:
+    """Stored textbook document metadata."""
+
+    id: str
+    title: str
+    subject: str
+    source_path: str
+    pages: int | None
+    indexed_at: str
+
+
 def init_schema(*, db_path: Path | None = None) -> None:
     """Create RAG tables in the existing Examsolver SQLite database."""
 
@@ -68,6 +80,69 @@ def init_schema(*, db_path: Path | None = None) -> None:
             _ensure_schema(connection)
     except (sqlite3.Error, OSError) as exc:
         raise RAGStoreError("failed to initialize RAG sqlite-vec schema") from exc
+
+
+def get_document_by_source_path(
+    source_path: str,
+    *,
+    db_path: Path | None = None,
+) -> IndexedDocument | None:
+    """Return an indexed document by source path, if present."""
+
+    try:
+        with _connect_vec(db_path) as connection:
+            _ensure_schema(connection)
+            row = connection.execute(
+                """
+                SELECT id, title, subject, source_path, pages, indexed_at
+                FROM documents
+                WHERE source_path = ?
+                """,
+                (source_path,),
+            ).fetchone()
+    except (sqlite3.Error, OSError) as exc:
+        raise RAGStoreError("failed to fetch indexed document") from exc
+    return None if row is None else _document_from_row(row)
+
+
+def delete_document_by_source_path(
+    source_path: str,
+    *,
+    db_path: Path | None = None,
+) -> int:
+    """Delete one indexed document and all its chunks/vectors by source path."""
+
+    try:
+        with _connect_vec(db_path) as connection:
+            _ensure_schema(connection)
+            chunk_rows = connection.execute(
+                """
+                SELECT c.id
+                FROM chunks c
+                JOIN documents d ON d.id = c.document_id
+                WHERE d.source_path = ?
+                """,
+                (source_path,),
+            ).fetchall()
+            chunk_ids = [str(row["id"]) for row in chunk_rows]
+            for chunk_id in chunk_ids:
+                connection.execute("DELETE FROM chunk_vec WHERE chunk_id = ?", (chunk_id,))
+            connection.execute(
+                """
+                DELETE FROM chunks
+                WHERE document_id IN (
+                    SELECT id FROM documents WHERE source_path = ?
+                )
+                """,
+                (source_path,),
+            )
+            cursor = connection.execute(
+                "DELETE FROM documents WHERE source_path = ?",
+                (source_path,),
+            )
+    except (sqlite3.Error, OSError) as exc:
+        raise RAGStoreError("failed to delete indexed document") from exc
+    return cursor.rowcount
 
 
 def insert_chunk(
@@ -217,6 +292,17 @@ def _chunk_from_row(row: sqlite3.Row) -> TextbookChunk:
         text=str(row["text"]),
         chunk_index=int(row["chunk_index"]),
         distance=float(row["distance"]),
+    )
+
+
+def _document_from_row(row: sqlite3.Row) -> IndexedDocument:
+    return IndexedDocument(
+        id=str(row["id"]),
+        title=str(row["title"]),
+        subject=str(row["subject"]),
+        source_path=str(row["source_path"]),
+        pages=_optional_int(row["pages"]),
+        indexed_at=str(row["indexed_at"]),
     )
 
 

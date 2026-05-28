@@ -280,14 +280,14 @@
 - [x] cosine distance threshold 0.5
 - [x] 单测覆盖命中 / 不命中 / 跨学科隔离
 
-### 📥 M3-07 · `index_textbook.py` 脚本
+### ✅ M3-07 · `index_textbook.py` 脚本
 **估时**：2 h
 **前置**：M3-05, M3-06, M3-01
 **出口**：
-- [ ] `scripts/index_textbook.py`
-- [ ] 入参 `<pdf_path> --subject <s> --title <t>`
-- [ ] 流程：pypdf 读 → 失败回退 PaddleOCR → chunk → embed → 写库
-- [ ] 实测对一本 PDF 教材索引完成 ≥ 50 chunks
+- [x] `scripts/index_textbook.py`
+- [x] 入参 `<pdf_path> --subject <s> --title <t>`
+- [x] 流程：pypdf 读 → 失败回退 PaddleOCR → chunk → embed → 写库
+- [x] 实测对一本 PDF 教材索引完成 ≥ 50 chunks
 
 ### 📥 M3-08 · 新行星 `tolerance/` + `fit_type` skill
 **估时**：3 h

@@ -8,6 +8,8 @@ import pytest
 from examsolver.rag.embedder import EMBEDDING_DIMENSION
 from examsolver.rag.store_sqlite_vec import (
     RAGStoreError,
+    delete_document_by_source_path,
+    get_document_by_source_path,
     init_schema,
     insert_chunk,
     query_nearest,
@@ -122,6 +124,37 @@ def test_insert_chunk_and_query_nearest_by_subject(tmp_path: Path) -> None:
     assert rows[0].text == "导数定义"
     assert rows[0].chunk_index == 0
     assert rows[0].distance < rows[1].distance
+
+
+def test_get_and_delete_document_by_source_path(tmp_path: Path) -> None:
+    db_path = tmp_path / "examsolver.db"
+    source_path = "/books/tolerance.pdf"
+    init_schema(db_path=db_path)
+    insert_chunk(
+        document_id="doc-tolerance",
+        title="Tolerance",
+        subject="tolerance",
+        source_path=source_path,
+        pages=12,
+        chunk_id="chunk-1",
+        page=1,
+        text="H7 配合",
+        chunk_index=0,
+        embedding=_vec(1.0, 0.0),
+        indexed_at="2026-05-28T00:00:00+00:00",
+        db_path=db_path,
+    )
+
+    document = get_document_by_source_path(source_path, db_path=db_path)
+    deleted = delete_document_by_source_path(source_path, db_path=db_path)
+
+    assert document is not None
+    assert document.id == "doc-tolerance"
+    assert document.title == "Tolerance"
+    assert document.pages == 12
+    assert deleted == 1
+    assert get_document_by_source_path(source_path, db_path=db_path) is None
+    assert query_nearest(_vec(1.0, 0.0), "tolerance", 5, db_path=db_path) == []
 
 
 def test_insert_chunk_rejects_wrong_dimension(tmp_path: Path) -> None:

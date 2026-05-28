@@ -246,14 +246,14 @@
 - [x] 失败 append fallback_reasons 继续
 - [x] `graph/build.py` 加条件边
 
-### 📥 M3-03 · sentence-transformers embedder
+### ✅ M3-03 · sentence-transformers embedder
 **估时**：1.5 h
 **前置**：M2-08
 **出口**：
-- [ ] `rag/embedder.py` 单例 + lazy load
-- [ ] 默认模型 `paraphrase-multilingual-MiniLM-L12-v2`
-- [ ] 接口：`embed(text: str) -> list[float]` / `embed_batch(texts) -> list[list[float]]`
-- [ ] 单测 happy path + 维度断言
+- [x] `rag/embedder.py` 单例 + lazy load
+- [x] 默认模型 `paraphrase-multilingual-MiniLM-L12-v2`
+- [x] 接口：`embed(text: str) -> list[float]` / `embed_batch(texts) -> list[list[float]]`
+- [x] 单测 happy path + 维度断言
 
 ### 📥 M3-04 · sqlite-vec 向量存储
 **估时**：2 h

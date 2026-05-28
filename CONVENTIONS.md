@@ -325,6 +325,8 @@ def my_node(state: SolveState) -> SolveState:
 
 ### 15.2 embedding
 - 模型固定 `paraphrase-multilingual-MiniLM-L12-v2`（384 维）
+- 首次使用 sentence-transformers 可能下载约 500MB 模型文件
+- 可用 `EXAMSOLVER_EMBED_MODEL` 指向本地模型路径或兼容模型名
 - 切换模型 → 必须重建索引 → 文档警告
 
 ### 15.3 检索

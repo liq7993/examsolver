@@ -450,7 +450,7 @@ CREATE TABLE chunks (
 -- sqlite-vec 向量表
 CREATE VIRTUAL TABLE chunk_vec USING vec0(
     chunk_id TEXT PRIMARY KEY,
-    embedding FLOAT[384]              -- sentence-transformers all-MiniLM-L6-v2
+    embedding FLOAT[384]              -- paraphrase-multilingual-MiniLM-L12-v2
 );
 ```
 

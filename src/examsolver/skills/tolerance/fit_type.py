@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any, cast
 
@@ -57,8 +57,13 @@ class FitTypeSkill:
         *,
         llm: LLMClient | None = None,
         rag_retrieve: RagRetrieve | None = None,
+        rag_chunks: Sequence[TextbookChunk] | None = None,
     ) -> SolveResult:
-        chunks = _retrieve_chunks(question, rag_retrieve=rag_retrieve)
+        chunks = (
+            list(rag_chunks)
+            if rag_chunks is not None
+            else _retrieve_chunks(question, rag_retrieve=rag_retrieve)
+        )
         params = _extract_symbols(question, chunks=chunks, llm=llm)
         try:
             hole = lookup_basic_deviation(params["hole_symbol"], "hole")

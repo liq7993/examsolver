@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from examsolver.api.routes.capabilities import router as capabilities_router
 from examsolver.api.routes.export import router as export_router
 from examsolver.api.routes.health import router as health_router
+from examsolver.api.routes.library import router as library_router
 from examsolver.api.routes.llm import router as llm_router
 from examsolver.api.routes.solve import router as solve_router
 
@@ -24,6 +25,7 @@ def create_app() -> FastAPI:
     app.include_router(health_router)
     app.include_router(capabilities_router)
     app.include_router(llm_router)
+    app.include_router(library_router)
     app.include_router(solve_router)
     app.include_router(export_router)
 

@@ -71,6 +71,7 @@ def index_textbook(
     pdf_path: Path,
     subject: str,
     title: str,
+    document_id: str | None = None,
     force: bool = False,
 ) -> IndexStats:
     """Read, chunk, embed, and store one textbook PDF."""
@@ -95,7 +96,7 @@ def index_textbook(
     if not chunks:
         raise RuntimeError("no chunks were produced from the PDF")
 
-    document_id = _document_id(source_path=source_path, subject=subject)
+    resolved_document_id = document_id or _document_id(source_path=source_path, subject=subject)
     embeddings = _embed_chunks(chunks)
     if len(embeddings) != len(chunks):
         raise RuntimeError("embedding count does not match chunk count")
@@ -103,12 +104,12 @@ def index_textbook(
     for index, (chunk, embedding) in enumerate(zip(chunks, embeddings, strict=True), start=1):
         _print_progress("write", index, len(chunks))
         insert_chunk(
-            document_id=document_id,
+            document_id=resolved_document_id,
             title=title,
             subject=subject,
             source_path=source_path,
             pages=len(pages),
-            chunk_id=f"{document_id}:{chunk.chunk_index:06d}",
+            chunk_id=f"{resolved_document_id}:{chunk.chunk_index:06d}",
             page=chunk.page,
             text=chunk.text,
             chunk_index=chunk.chunk_index,

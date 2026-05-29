@@ -300,13 +300,13 @@
 - [x] 5 条 fixture
 - [x] `python scripts/smoke.py "H7/g6 是什么配合？"` 走通
 
-### 📥 M3-09 · `rag_retrieve_node` + Library API
+### ✅ M3-09 · `rag_retrieve_node` + Library API
 **估时**：2 h
 **前置**：M3-06, M3-08
 **出口**：
-- [ ] `graph/nodes.py` 加 `rag_retrieve_node`，按 `state.subject` 是否有教材决定
-- [ ] `api/routes/library.py` 加 `GET /library` `POST /library/upload` `POST /library/index/{id}` `DELETE /library/{id}`
-- [ ] `storage/documents_repo.py`
+- [x] `graph/nodes.py` 加 `rag_retrieve_node`，按 `state.subject` 是否有教材决定
+- [x] `api/routes/library.py` 加 `GET /library` `POST /library/upload` `POST /library/index/{id}` `DELETE /library/{id}`
+- [x] `storage/documents_repo.py`
 
 ### ✅ M3-10 · M3 出口验收
 **估时**：30 min

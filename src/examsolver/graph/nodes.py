@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 import logging
 from dataclasses import replace
 
@@ -14,10 +15,11 @@ from examsolver.notes.note_builder import build_note
 from examsolver.pipeline.dispatcher import dispatch
 from examsolver.pipeline.formatter import format_response
 from examsolver.pipeline.normalizer import normalize
+from examsolver.rag import retriever as rag_retriever
 from examsolver.services.explanation import enhance_if_needed
 from examsolver.skills.base import PersistenceError
 from examsolver.skills.general import CotWithTextbookSkill
-from examsolver.skills.registry import unknown_skill
+from examsolver.skills.registry import get_skill, unknown_skill
 from examsolver.storage.history_repo import save_history
 
 logger = logging.getLogger(__name__)
@@ -116,19 +118,48 @@ def router_agent_node(state: SolveGraphState) -> SolveGraphState:
 def route_after_router(state: SolveGraphState) -> str:
     """Send known types to skills and unsupported types to the general fallback."""
 
+    if _should_retrieve_rag(state):
+        return "rag_retrieve"
     return "general" if state.get("question_type") == "unknown" else "skill"
+
+
+def route_after_rag(state: SolveGraphState) -> str:
+    """Continue to the original solve branch after optional RAG retrieval."""
+
+    return "general" if state.get("question_type") == "unknown" else "skill"
+
+
+def rag_retrieve_node(state: SolveGraphState) -> SolveGraphState:
+    """Retrieve textbook chunks for subjects or skills that declare RAG support."""
+
+    normalized = state["normalized"]
+    request_id = str(normalized.hints.get("request_id", "unknown"))
+    subject = state.get("subject") or normalized.subject
+    if not _should_retrieve_rag(state):
+        _log_info(request_id, "rag_retrieve_node", "skip subject=%s", subject)
+        return {"retrieved_chunks": []}
+
+    _log_info(request_id, "rag_retrieve_node", "begin subject=%s", subject)
+    chunks = rag_retriever.retrieve(query=normalized.normalized_text, subject=subject)
+    _log_info(request_id, "rag_retrieve_node", "done chunks=%s", len(chunks))
+    return {"retrieved_chunks": chunks}
 
 
 def skill_node(state: SolveGraphState) -> SolveGraphState:
     """Run the selected deterministic skill."""
 
     normalized = state["normalized"]
+    routed_question = replace(normalized, subject=state.get("subject", normalized.subject))
     request_id = str(normalized.hints.get("request_id", "unknown"))
     try:
-        result = dispatch(normalized, state["question_type"])
+        result = dispatch(
+            routed_question,
+            state["question_type"],
+            rag_chunks=state.get("retrieved_chunks", []),
+        )
     except Exception as exc:
         _log_warning(request_id, "skill_node", "fallback primary_skill_failed: %s", exc)
-        result = unknown_skill().solve(normalized)
+        result = unknown_skill().solve(routed_question)
         fallback_reasons = [*state.get("fallback_reasons", []), "primary_skill_failed"]
         return {
             "solve_result": result,
@@ -195,7 +226,10 @@ def note_builder_node(state: SolveGraphState) -> SolveGraphState:
     normalized = state["normalized"]
     request_id = str(normalized.hints.get("request_id", "unknown"))
     _log_info(request_id, "note_builder_node", "begin")
-    note = replace(build_note(state["solve_result"], normalized), subject=state.get("subject", normalized.subject))
+    note = replace(
+        build_note(state["solve_result"], normalized),
+        subject=state.get("subject", normalized.subject),
+    )
     _log_info(request_id, "note_builder_node", "done title=%s", note.title)
     return {"note": note}
 
@@ -238,3 +272,28 @@ def _log_info(request_id: str, function: str, message: str, *args: object) -> No
 
 def _log_warning(request_id: str, function: str, message: str, *args: object) -> None:
     logger.warning("[%s] WARNING graph.nodes.%s: " + message, request_id, function, *args)
+
+
+def _should_retrieve_rag(state: SolveGraphState) -> bool:
+    normalized = state.get("normalized")
+    subject = state.get("subject") or (normalized.subject if normalized is not None else None)
+    question_type = state.get("question_type", "")
+    return _subject_has_textbook(subject) or _skill_needs_rag(subject, question_type)
+
+
+def _subject_has_textbook(subject: str | None) -> bool:
+    if not subject:
+        return False
+    try:
+        module = importlib.import_module(f"examsolver.skills.{subject}._meta")
+    except ModuleNotFoundError:
+        return False
+    meta = getattr(module, "SUBJECT_META", {})
+    return isinstance(meta, dict) and meta.get("has_textbook") is True
+
+
+def _skill_needs_rag(subject: str | None, question_type: str | None) -> bool:
+    if not subject or not question_type:
+        return False
+    skill = get_skill(subject, question_type)
+    return bool(getattr(skill, "needs_rag", False))

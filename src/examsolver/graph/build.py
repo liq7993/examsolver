@@ -19,6 +19,8 @@ from examsolver.graph.nodes import (
     note_builder_node,
     ocr_node,
     persist_node,
+    rag_retrieve_node,
+    route_after_rag,
     route_after_router,
     router_agent_node,
     skill_node,
@@ -41,6 +43,7 @@ def build_graph() -> CompiledStateGraph[Any, Any, Any, Any]:
     graph.add_node("normalize", normalize_node)
     graph.add_node("ocr", ocr_node)
     graph.add_node("router_agent", router_agent_node)
+    graph.add_node("rag_retrieve", rag_retrieve_node)
     graph.add_node("skill", skill_node)
     graph.add_node("general", general_node)
     graph.add_node("explanation_enhancer", explanation_enhancer_node)
@@ -58,6 +61,11 @@ def build_graph() -> CompiledStateGraph[Any, Any, Any, Any]:
     graph.add_conditional_edges(
         "router_agent",
         route_after_router,
+        {"rag_retrieve": "rag_retrieve", "skill": "skill", "general": "general"},
+    )
+    graph.add_conditional_edges(
+        "rag_retrieve",
+        route_after_rag,
         {"skill": "skill", "general": "general"},
     )
     graph.add_edge("skill", "explanation_enhancer")

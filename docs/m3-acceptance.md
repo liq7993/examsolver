@@ -1,17 +1,15 @@
 # M3 Acceptance
 
-Date: 2026-05-28
+Date: 2026-05-29
 
 ## Quality Gates
 
 - `uv run ruff check .`: passed
-- `uv run mypy src tests`: passed, 99 source files checked
-- `uv run pytest -q`: passed, 169 passed / 3 skipped
-- `uv run pytest tests/rag/ -q`: passed, 23 passed
+- `uv run mypy src tests`: passed, `Success: no issues found in 103 source files`
+- `uv run pytest -q`: passed, `177 passed, 3 skipped in 21.07s`
+- Focused RAG tests after M3-10 changes: `10 passed in 4.04s`
 
-`tests/rag/` includes retriever happy-path, empty/no-hit result, and cross-subject isolation coverage.
-
-## Textbook Indexing
+## Textbook Index
 
 Command:
 
@@ -21,14 +19,12 @@ uv run python scripts/index_textbook.py data/textbooks/tolerance.pdf --subject t
 
 Result:
 
-- Source: `data/textbooks/tolerance.pdf`
-- Text path: embedded PDF text, no OCR fallback needed
-- Pages: 20
-- Chunks: 240
-- Errors: 0
-- Elapsed: 93.22s
+```text
+/mnt/d/examsolver/examsolver/data/textbooks/tolerance.pdf is already indexed as 268d9557-5863-54e8-b746-a4dab00f1b7a; reuse pages=20 chunks=240. Rerun with --force to overwrite.
+Indexed pages=20 chunks=240 elapsed=0.09s errors=0
+```
 
-This satisfies the M3 exit requirement of at least 50 chunks.
+Acceptance: passed, `240 >= 50` chunks.
 
 ## Smoke Outputs
 
@@ -47,12 +43,8 @@ Excerpt:
   "question_type": "fit_type",
   "skill": "tolerance.fit_type",
   "answer": "H7/g6 属于间隙配合",
-  "citations_count": 3,
-  "first_citation": {
-    "source": "公差与测量",
-    "page": 1,
-    "snippet": "# H7配合"
-  }
+  "citations_count": 5,
+  "note_citations_count": 5
 }
 ```
 
@@ -71,26 +63,34 @@ Excerpt:
   "question_type": "fit_type",
   "skill": "tolerance.fit_type",
   "answer": "H/h 属于间隙配合",
-  "citations_count": 3
+  "citations_count": 5,
+  "note_citations_count": 5
 }
 ```
 
+Acceptance: passed, both smoke responses include textbook citations.
+
 ## OCR Timing
 
-Fixture: `tests/fixtures/ocr/handwritten_formula.png`
+Image: `tests/fixtures/ocr/handwritten_formula.png`
 
-Measurement method: initialize PaddleOCR once, run one warmup recognition, then measure the second recognition call.
+Measured command ran two OCR calls in one process so model initialization and per-image processing could be separated.
 
-Result:
+```text
+cold=117.008s warm=0.952s chars=11 bboxes=2 confidence=0.706 text='√-×23\n++=2×'
+```
 
-- Elapsed: 0.417s
-- Blocks: 2
-- Confidence: 0.706
-- Recognized excerpt: `√-×23 | ++=2×`
+Acceptance: passed for processing time, `0.952s < 3s`. Cold start remains dominated by PaddleOCR model initialization.
 
-This satisfies the M3 exit requirement of OCR processing a handwritten formula image in under 3s. The recognition text is imperfect, but the current M3 exit criterion is latency; recognition quality should be improved with a stronger formula/handwriting OCR path later.
+## RAG Coverage
+
+- Happy path: `tests/rag/test_retriever.py::test_retrieve_returns_hits_under_cosine_distance_threshold`
+- Empty result: `tests/rag/test_retriever.py::test_retrieve_returns_empty_when_all_distances_miss`
+- Store/index idempotency and chunk count coverage added in M3-10:
+  - `tests/rag/test_index_textbook.py::test_duplicate_source_path_reuses_existing_index`
+  - `tests/rag/test_store.py::test_get_and_delete_document_by_source_path`
 
 ## Followup
 
-- SentenceTransformer still performs Hugging Face metadata HEAD requests unless `HF_TOKEN` or a fully local model path is configured.
-- Local BACKLOG still lists M3-09 as unchecked and the corresponding Library API files are absent in this tree; this report only closes the M3-10 acceptance card.
+- Reduce embedding cold-start latency. Each `scripts/smoke.py` run starts a new process and reloads `sentence-transformers`, including Hugging Face cache metadata checks.
+- Document or automate PaddleOCR model warmup. Runtime image processing is under 3s, but cold initialization was 117s in this environment.

@@ -312,8 +312,14 @@
 **估时**：30 min
 **前置**：M3-01..M3-09
 **出口**：
-- [x] 用户能上传公差教材并索引
-- [x] "H7/g6 是什么配合？" 返回 citations ≥ 1
+- [x] `uv run ruff check .`
+- [x] `uv run mypy src tests`
+- [x] `uv run pytest -q`
+- [x] 公差教材索引通过：20 pages / 240 chunks
+- [x] "H7/g6 是什么配合？" 返回 note.citations = 5
+- [x] "请说明孔的基本偏差代号 H 和轴的 h 区别" 返回 note.citations = 5
+- [x] 手写公式 OCR warm 处理耗时 0.952s
+- [x] `docs/m3-acceptance.md`
 - [x] commit `M3: ocr + rag + tolerance planet`
 
 ---

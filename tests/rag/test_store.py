@@ -9,6 +9,7 @@ from examsolver.rag.embedder import EMBEDDING_DIMENSION
 from examsolver.rag.store_sqlite_vec import (
     RAGStoreError,
     delete_document_by_source_path,
+    count_document_chunks,
     get_document_by_source_path,
     init_schema,
     insert_chunk,
@@ -146,14 +147,17 @@ def test_get_and_delete_document_by_source_path(tmp_path: Path) -> None:
     )
 
     document = get_document_by_source_path(source_path, db_path=db_path)
+    chunk_count = count_document_chunks("doc-tolerance", db_path=db_path)
     deleted = delete_document_by_source_path(source_path, db_path=db_path)
 
     assert document is not None
     assert document.id == "doc-tolerance"
     assert document.title == "Tolerance"
     assert document.pages == 12
+    assert chunk_count == 1
     assert deleted == 1
     assert get_document_by_source_path(source_path, db_path=db_path) is None
+    assert count_document_chunks("doc-tolerance", db_path=db_path) == 0
     assert query_nearest(_vec(1.0, 0.0), "tolerance", 5, db_path=db_path) == []
 
 

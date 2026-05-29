@@ -26,7 +26,7 @@ def dispatch(
     skill = find_skill_for(question, question_type)
     try:
         if rag_chunks is not None and "rag_chunks" in inspect.signature(skill.solve).parameters:
-            result = cast(Any, skill).solve(question, rag_chunks=list(rag_chunks))
+            result = cast(SolveResult, cast(Any, skill).solve(question, rag_chunks=list(rag_chunks)))
         else:
             result = skill.solve(question)
     except Exception as exc:

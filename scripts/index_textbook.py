@@ -23,6 +23,7 @@ from examsolver.multimodal.ocr_paddle import recognize  # noqa: E402
 from examsolver.rag.chunker import Chunk, chunk_pdf_pages  # noqa: E402
 from examsolver.rag.embedder import embed_batch  # noqa: E402
 from examsolver.rag.store_sqlite_vec import (  # noqa: E402
+    count_document_chunks,
     delete_document_by_source_path,
     get_document_by_source_path,
     init_schema,
@@ -85,8 +86,17 @@ def index_textbook(
     init_schema()
     existing = get_document_by_source_path(source_path)
     if existing is not None and not force:
-        raise RuntimeError(
-            f"{source_path} is already indexed as {existing.id}; rerun with --force to overwrite"
+        chunk_count = count_document_chunks(existing.id)
+        print(
+            f"{source_path} is already indexed as {existing.id}; "
+            f"reuse pages={existing.pages or 0} chunks={chunk_count}. "
+            "Rerun with --force to overwrite."
+        )
+        return IndexStats(
+            pages=existing.pages or 0,
+            chunks=chunk_count,
+            elapsed_seconds=time.perf_counter() - started,
+            errors=[],
         )
     if existing is not None and force:
         delete_document_by_source_path(source_path)

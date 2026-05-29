@@ -65,7 +65,7 @@ def test_index_textbook_text_pdf_path_writes_chunks(
     assert isinstance(inserted[0]["embedding"], list)
 
 
-def test_duplicate_source_path_requires_force(
+def test_duplicate_source_path_reuses_existing_index(
     index_script: ModuleType,
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -83,13 +83,17 @@ def test_duplicate_source_path_requires_force(
 
     monkeypatch.setattr(index_script, "init_schema", lambda: None)
     monkeypatch.setattr(index_script, "get_document_by_source_path", lambda source_path: existing)
+    monkeypatch.setattr(index_script, "count_document_chunks", lambda document_id: 240)
 
-    with pytest.raises(RuntimeError, match="rerun with --force"):
-        index_script.index_textbook(
-            pdf_path=pdf_path,
-            subject="tolerance",
-            title="公差与测量",
-        )
+    stats = index_script.index_textbook(
+        pdf_path=pdf_path,
+        subject="tolerance",
+        title="公差与测量",
+    )
+
+    assert stats.pages == 12
+    assert stats.chunks == 240
+    assert stats.errors == []
 
 
 def test_force_deletes_existing_source_before_writing(

@@ -212,7 +212,7 @@ def _index_textbook(
     document_id: str,
 ) -> Any:
     module = _load_index_script()
-    return module.index_textbook(  # type: ignore[attr-defined, no-any-return]
+    return module.index_textbook(
         pdf_path=pdf_path,
         subject=subject,
         title=title,

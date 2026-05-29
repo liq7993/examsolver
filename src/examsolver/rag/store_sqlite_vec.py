@@ -105,6 +105,25 @@ def get_document_by_source_path(
     return None if row is None else _document_from_row(row)
 
 
+def count_document_chunks(
+    document_id: str,
+    *,
+    db_path: Path | None = None,
+) -> int:
+    """Return how many chunks are stored for one document."""
+
+    try:
+        with _connect_vec(db_path) as connection:
+            _ensure_schema(connection)
+            row = connection.execute(
+                "SELECT COUNT(*) AS count FROM chunks WHERE document_id = ?",
+                (document_id,),
+            ).fetchone()
+    except (sqlite3.Error, OSError) as exc:
+        raise RAGStoreError("failed to count document chunks") from exc
+    return 0 if row is None else int(row["count"])
+
+
 def delete_document_by_source_path(
     source_path: str,
     *,

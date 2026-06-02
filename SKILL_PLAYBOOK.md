@@ -600,4 +600,63 @@ A：临时实验放 `scripts/experiments/`，不要污染 `skills/`。
 
 ---
 
-*文档状态：v1.0 初稿。新写 skill 时若发现模板有改进空间，先改本文件再写代码。*
+## 11. 防偷懒：派 skill 卡给 agent（Codex）的规约
+
+> **真实事故（2026-05-29）**：`calculus.derivative` 这张 Type-D 卡被 agent 实现成**手写正则**
+> （架构明确要求 sympy）。结果：只会幂函数 `a·x^n`；遇到 `sin(x)` 静默当成 `x`、返回 `1`
+> （正解 `cos(x)`）——**自信地骗人**；解析失败时（旧第 99 行）**凭空假装题目是 `x^2`**。
+> 而且单测全绿、静态 review 也没抓到。是真跑一次 demo 才暴露的。
+>
+> 教训：**只给目标，agent 会挑最省事的错误实现**。卡片必须堵死偷懒路径。
+
+### 11.1 每张 skill 卡必带"四件套"
+
+```
+【硬约束】必须 / 禁止。例：
+  - 必须用 sympy 求解，禁止用正则解析数学表达式
+  - 禁止 import 其他 skill / langgraph / fastapi / sqlite3（见 §13 红线）
+  - 解析失败必须 raise SkillExecutionError，禁止编造一个默认答案
+
+【正例】具体输入 → 期望输出，至少 2 条，覆盖核心能力（不止幂函数那种最简单的）。
+  例：sin(x) → cos(x)；x·sin(x) → sin(x)+x·cos(x)（乘积法则）
+
+【反例】边界 / 非法 / 能力外输入 → 期望的诚实行为（降级 / 报错 / 不编造），至少 1 条。
+  例："这道题图里有个齿轮，求它的导数" → raise SkillExecutionError（不许返回 x^2）
+
+【验证门】真跑什么命令确认卡真完成（不是"看起来完成"）：
+  - .\.venv\Scripts\python.exe -m pytest tests/skills/<subject>/ -q
+  - .\.venv\Scripts\python.exe scripts\smoke.py "<正例题>" → 人眼确认答案对
+  - .\.venv\Scripts\python.exe scripts\smoke.py "<反例题>" → 确认走了诚实降级
+```
+
+### 11.2 三条铁律
+
+1. **Type-D / Type-H 卡必须写反例**。诚实降级是产品卖点（见 ARCHITECTURE §11、§6.3），
+   而 agent 默认不会主动做——不写明就会编造答案兜底。
+2. **正例要覆盖"非平凡"分支**。只给 `x^2 → 2x` 这种最简单的，agent 就只实现幂函数。
+   必须显式列 `sin/链式/乘积/商` 这类样例当验收锚点。
+3. **完成判定 = 真跑验证门，不是测试绿**。derivative 的 bug 正是测试覆盖不到边界才溜过的。
+   任何 skill 卡 review，**必须有人真跑一次 smoke.py 正例 + 反例**。
+
+### 11.3 卡片骨架（复制改用）
+
+```
+### <编号> · <skill 名>
+所属：<M?>   类型：Type-D/L/H   前置：<依赖>
+
+【上下文】为什么做 + agent 需知道的既有事实（契约字段、可用 helper、相关 _tables）。
+不要让 agent 自己猜架构——猜就会偏离 ARCHITECTURE.md。
+
+【硬约束】必须 / 禁止（见 §11.1）
+【出口】可勾选的文件产出 + 行为清单
+【正例】≥2 条，含非平凡分支
+【反例】≥1 条，期望诚实降级 / 报错
+【验证门】pytest + smoke.py 正例反例各跑一遍
+```
+
+> 完整的里程碑级卡片清单（M4/M5 等）维护在 `D:\claude_memory\examsolver_goal_cards.md`，
+> 本节只固化"怎么写一张防偷懒的 skill 卡"的方法论。
+
+---
+
+*文档状态：v1.1 · 2026-05-29 加入 §11 防偷懒规约（吸取 derivative bug 教训）。新写 skill 时若发现模板有改进空间，先改本文件再写代码。*

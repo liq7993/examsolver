@@ -567,10 +567,11 @@ def pick_llm(task_kind: str, needs_vision: bool) -> LLMClient:
 
 ### 9.3 本地客户端
 
-- 当前：Gemma 4 GGUF via llama-server (E:\gemma 4\)
-- 几天后：GPT-OSS（开源模型，TBD 具体版本）
+- 默认：Gemma 4 GGUF via llama-server (E:\gemma 4\)
+- 已接入 preset：GPT-OSS 20B / 120B（见 ADR-008，OpenAI 开源 Apache-2.0）
 - 接口：OpenAI 兼容（llama-server 提供）
-- 切换：改一个环境变量 `EXAMSOLVER_LLM_MODEL_PATH`，不改代码
+- 切换：改一个环境变量 `EXAMSOLVER_LLM_PRESET`（`gemma4` / `gpt-oss-20b` / `gpt-oss-120b`），不改代码。preset 决定 model / model_path / timeout / max_tokens 默认值，可再用 per-key 环境变量覆盖
+- 现状：preset 机制已落地（commit `c4ad3e4`）；GPT-OSS GGUF 到位后的质量回归验证见 BACKLOG X-03，操作手册见 [`docs/gpt-oss-setup.md`](docs/gpt-oss-setup.md)
 
 ---
 
@@ -770,6 +771,7 @@ fallback 2：返回 "解题失败" 的合法 SolveResponse（success=false, 含 
 | ADR-005 | 笔记结构在后端构造，前端纯渲染 | 2026-05 | 易导出、易缓存、易迁移 |
 | ADR-006 | 旧确定性 skill 保留作内核 | 2026-05 | 不浪费已有工作，符合 hybrid 型 |
 | ADR-007 | 弃 LangGraph 之外的 agent 框架（CrewAI/AutoGen）| 2026-05 | 一个就够，避免概念重复 |
+| ADR-008 | 本地开源模型选 GPT-OSS（20B/120B）而非 Qwen / Llama | 2026-05 | 用户偏好（不用 Qwen 系）；OpenAI 开源、Apache-2.0、Harmony 模板成熟、llama-server 一等支持。通过 `EXAMSOLVER_LLM_PRESET` 切换，与 Gemma 4 共存零代码改动。GGUF 到位前 preset 已可配，验证见 BACKLOG X-03 |
 
 ---
 

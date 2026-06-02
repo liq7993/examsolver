@@ -1,8 +1,12 @@
-# 任务卡 BACKLOG v1.0（B 路线）
+# 任务卡 BACKLOG v1.0（B 路线 · 简版）
 
 > 颗粒化任务，可直接领。每张卡包含：编号 / 标题 / 所属 M / 估时 / 出口 / 涉及文件 / 前置依赖。
 >
 > 阅读顺序：先 [`ROADMAP.md`](./ROADMAP.md) 看大方向，再来这里挑卡做。
+>
+> ⚠️ **本文件是简版（只列出口清单）。** 派给 Codex 执行时，请用**完整四件套版**（含
+> 上下文 / 硬约束 / **正例 / 反例 / 验证门**）：`D:\claude_memory\examsolver_goal_cards.md`。
+> 两边编号一一对应；为什么要四件套见 [`SKILL_PLAYBOOK.md §11`](./SKILL_PLAYBOOK.md)（derivative bug 教训）。
 
 ---
 
@@ -326,6 +330,9 @@
 
 ## M4 · 前端 + 一页一题 + Word 导出
 
+> 📌 M4/M5/M6/X 均未开工。**派活前到 `D:\claude_memory\examsolver_goal_cards.md` 取完整四件套卡**
+> （含正例 / 反例 / 验证门）。下方仅出口清单速览。
+
 ### 📥 M4-01 · 前端骨架抢救
 **估时**：2 h
 **前置**：M3-10
@@ -545,14 +552,24 @@
 - [ ] 健康检查
 - [ ] 失败时清晰报错
 
-### 📥 X-03 · 调研 GPT-OSS 切换
-**估时**：2 h
-**前置**：GPT-OSS 发布后
-**出口**：
-- [ ] 选定模型版本（与 Gemma 4 同量级 / 更高）
-- [ ] 跑通 llama-server 加载
-- [ ] 更新 `EXAMSOLVER_LLM_MODEL_PATH` 与文档
-- [ ] 路由 / 抽取任务质量回归 ≥ Gemma 4 水平
+### 🚧 X-03 · GPT-OSS 切换（preset 已接入，待 GGUF 验证）
+**估时**：剩 1 h（preset 部分已完成）
+**前置**：拿到 GPT-OSS GGUF 文件
+
+**已完成**（commit `c4ad3e4`）：
+- [x] 选定 GPT-OSS 20B / 120B（见 ADR-008，弃 Qwen / Llama）
+- [x] `config.py` preset 机制：`EXAMSOLVER_LLM_PRESET=gpt-oss-20b` 一键切，零代码改动
+- [x] 启动脚本 `scripts/start-examsolver-with-gpt-oss.ps1` / `start-gpt-oss-local-llm.ps1`
+- [x] 接入文档 `docs/gpt-oss-setup.md`（获取 GGUF 三路径 + Harmony 模板 + 故障表）
+
+**待 GGUF 到位后验证**（按 `docs/gpt-oss-setup.md §5`）：
+- [ ] 把 GGUF 放到 `E:\AI\models\gpt-oss-20b\gpt-oss-20b-Q4_K_M.gguf`
+- [ ] `start-gpt-oss-local-llm.ps1` 起 llama-server，`curl /v1/models` 返回 gpt-oss-20b
+- [ ] `start-examsolver-with-gpt-oss.ps1` 全栈起来，smoke.py 跑通一题
+- [ ] 路由准确率回归：10 条样本 ≥ 8 条与 Gemma 一致（参 `docs/m2-routing-eval.md`）
+- [ ] 通过后：README 主示例 + 答辩话术里"本地 LLM"从 Gemma 改 GPT-OSS
+
+**验证门**：`curl http://127.0.0.1:8080/v1/models` 有响应 + smoke.py 一题走通 + 10 条路由回归记录在案。
 
 ### 📥 X-04 · 监控 LLM 成本
 **估时**：1 h

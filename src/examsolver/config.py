@@ -16,6 +16,36 @@ def database_path() -> Path:
     return Path("data") / "examsolver.db"
 
 
+# Local LLM presets. Pick one with EXAMSOLVER_LLM_PRESET; any individual
+# EXAMSOLVER_LLM_* env var still overrides the preset's default value.
+#
+# Adding a new preset = adding one entry. No code changes elsewhere.
+_LLM_PRESETS: dict[str, dict[str, str | float | int]] = {
+    "gemma4": {
+        "model": "gemma-4-E2B-it-Q4_K_M",
+        "model_path": "/mnt/e/gemma 4/gemma-4-E2B-it-Q4_K_M.gguf",
+        "timeout_seconds": 60.0,
+        "max_tokens": 256,
+        "temperature": 0.2,
+    },
+    "gpt-oss-20b": {
+        "model": "gpt-oss-20b",
+        "model_path": "/mnt/e/AI/models/gpt-oss-20b/gpt-oss-20b-Q4_K_M.gguf",
+        "timeout_seconds": 120.0,
+        "max_tokens": 1024,
+        "temperature": 0.2,
+    },
+    "gpt-oss-120b": {
+        "model": "gpt-oss-120b",
+        "model_path": "/mnt/e/AI/models/gpt-oss-120b/gpt-oss-120b-Q4_K_M.gguf",
+        "timeout_seconds": 240.0,
+        "max_tokens": 2048,
+        "temperature": 0.2,
+    },
+}
+_DEFAULT_PRESET = "gemma4"
+
+
 @dataclass(frozen=True, slots=True)
 class LLMConfig:
     """Runtime configuration for the optional local explanation LLM."""
@@ -27,6 +57,7 @@ class LLMConfig:
     timeout_seconds: float
     max_tokens: int
     temperature: float
+    preset: str = _DEFAULT_PRESET
 
     @property
     def enabled(self) -> bool:
@@ -38,21 +69,33 @@ class LLMConfig:
 
 
 def load_llm_config() -> LLMConfig:
-    """Load optional local Gemma/OpenAI-compatible LLM settings from env."""
+    """Load optional local OpenAI-compatible LLM settings from env.
+
+    Preset chain:
+        EXAMSOLVER_LLM_PRESET sets defaults (gemma4 / gpt-oss-20b / gpt-oss-120b).
+        Per-key env vars (EXAMSOLVER_LLM_MODEL, _MODEL_PATH, _TIMEOUT_SECONDS,
+        _MAX_TOKENS, _TEMPERATURE) override the preset's default.
+    """
+
+    preset_name = os.environ.get("EXAMSOLVER_LLM_PRESET", _DEFAULT_PRESET)
+    preset = _LLM_PRESETS.get(preset_name, _LLM_PRESETS[_DEFAULT_PRESET])
 
     model_path_text = os.environ.get(
         "EXAMSOLVER_LLM_MODEL_PATH",
-        "/mnt/e/gemma 4/gemma-4-E2B-it-Q4_K_M.gguf",
+        str(preset["model_path"]),
     )
     model_path = Path(model_path_text) if model_path_text else None
     return LLMConfig(
         provider=os.environ.get("EXAMSOLVER_LLM_PROVIDER", "none"),
         base_url=os.environ.get("EXAMSOLVER_LLM_BASE_URL", "http://127.0.0.1:8080/v1"),
-        model=os.environ.get("EXAMSOLVER_LLM_MODEL", "gemma-4-E2B-it-Q4_K_M"),
+        model=os.environ.get("EXAMSOLVER_LLM_MODEL", str(preset["model"])),
         model_path=model_path,
-        timeout_seconds=_env_float("EXAMSOLVER_LLM_TIMEOUT_SECONDS", 60.0),
-        max_tokens=_env_int("EXAMSOLVER_LLM_MAX_TOKENS", 256),
-        temperature=_env_float("EXAMSOLVER_LLM_TEMPERATURE", 0.2),
+        timeout_seconds=_env_float(
+            "EXAMSOLVER_LLM_TIMEOUT_SECONDS", float(preset["timeout_seconds"])
+        ),
+        max_tokens=_env_int("EXAMSOLVER_LLM_MAX_TOKENS", int(preset["max_tokens"])),
+        temperature=_env_float("EXAMSOLVER_LLM_TEMPERATURE", float(preset["temperature"])),
+        preset=preset_name,
     )
 
 

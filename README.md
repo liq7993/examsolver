@@ -57,11 +57,17 @@ python scripts/smoke.py "求 x^2 对 x 的导数"
 uv run uvicorn examsolver.api.app:app --reload
 ```
 
-本机 LLM（Gemma 4，几天后换 GPT-OSS）：
+本机 LLM 二选一：
 
 ```powershell
+# Gemma 4（当前默认，开箱即用）
 .\scripts\start-examsolver-with-gemma.ps1
+
+# GPT-OSS 20B（需先获取 GGUF，见 docs/gpt-oss-setup.md）
+.\scripts\start-examsolver-with-gpt-oss.ps1
 ```
+
+切换无需改代码：preset 系统由 `EXAMSOLVER_LLM_PRESET=gemma4|gpt-oss-20b|gpt-oss-120b` 控制，per-key 环境变量仍可覆盖任意字段。详见 [`docs/gpt-oss-setup.md`](./docs/gpt-oss-setup.md)。
 
 云端 LLM（Claude Sonnet 4.6）需要 `ANTHROPIC_API_KEY` 环境变量（M1 起接入）。
 
@@ -73,7 +79,7 @@ uv run uvicorn examsolver.api.app:app --reload
 |---|---|
 | 编排 | LangGraph (Python) |
 | LLM 主力 | Claude Sonnet 4.6（云）|
-| LLM 本地 | Gemma 4 → 几天后换 GPT-OSS |
+| LLM 本地 | Gemma 4（默认）/ GPT-OSS 20B（preset 切换） |
 | VLM | Claude 4.6 多模态（仅云端，无本地替代）|
 | OCR | PaddleOCR（本地、中文友好、识公式）|
 | Embedding | sentence-transformers（本地）|

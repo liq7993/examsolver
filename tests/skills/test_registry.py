@@ -50,6 +50,6 @@ def test_list_skills_returns_serializable_metadata() -> None:
     assert derivative == {
         "subject": "calculus",
         "name": "calculus.derivative",
-        "version": "0.1.0",
+        "version": "0.2.0",
         "question_types": ["derivative"],
     }

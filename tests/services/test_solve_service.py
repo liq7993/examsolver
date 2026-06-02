@@ -41,7 +41,7 @@ def test_solve_service_returns_derivative_response() -> None:
     assert response.subject == "calculus"
     assert response.question_type == "derivative"
     assert response.skill == "calculus.derivative"
-    assert response.answer == "$\\frac{d}{dx}(x^2) = 2x$"
+    assert response.answer == "$\\frac{d}{dx}\\left(x^{2}\\right) = 2 x$"
 
     stored = get_response(response.solve_id)
     assert stored is not None

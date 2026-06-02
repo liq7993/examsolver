@@ -20,6 +20,13 @@ from examsolver.services.solve_service import solve  # noqa: E402
 
 
 def main() -> None:
+    # Windows consoles default to GBK (cp936); ensure_ascii=False output then
+    # garbles Chinese. Force UTF-8 so the CLI demo is readable on any console.
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding="utf-8")
+
     parser = argparse.ArgumentParser(description="Solve one question through Examsolver core.")
     parser.add_argument("question", nargs="?", default="求 x^2 对 x 的导数")
     parser.add_argument(

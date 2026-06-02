@@ -16,6 +16,6 @@ def test_export_to_markdown_includes_complete_solve_artifact() -> None:
     assert "## 题目" in markdown
     assert "求 x^2 对 x 的导数" in markdown
     assert "## 最终答案" in markdown
-    assert "$\\frac{d}{dx}(x^2) = 2x$" in markdown
+    assert "$\\frac{d}{dx}\\left(x^{2}\\right) = 2 x$" in markdown
     assert "## 步骤" in markdown
     assert "## 学生解释" in markdown

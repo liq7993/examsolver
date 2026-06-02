@@ -23,7 +23,7 @@ def test_save_list_and_get_history() -> None:
     stored = get_response(response.solve_id)
     assert stored is not None
     assert stored.solve_id == response.solve_id
-    assert stored.answer == "$\\frac{d}{dx}(x^2) = 2x$"
+    assert stored.answer == "$\\frac{d}{dx}\\left(x^{2}\\right) = 2 x$"
 
     snapshot = get_snapshot(response.solve_id)
     assert snapshot is not None

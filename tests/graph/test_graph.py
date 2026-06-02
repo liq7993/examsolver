@@ -126,7 +126,7 @@ def test_run_solve_graph_matches_existing_service_contract() -> None:
     assert response.subject == "calculus"
     assert response.question_type == "derivative"
     assert response.skill == "calculus.derivative"
-    assert response.answer == "$\\frac{d}{dx}(x^2) = 2x$"
+    assert response.answer == "$\\frac{d}{dx}\\left(x^{2}\\right) = 2 x$"
     assert response.note is not None
     assert response.note.solve_id == response.solve_id
 

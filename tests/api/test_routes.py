@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from fastapi import HTTPException
 from pytest import MonkeyPatch
 from starlette.responses import Response
@@ -69,11 +71,17 @@ def test_capabilities_route_lists_registered_skills() -> None:
     assert subjects["mechanics"] == ["force_balance"]
 
 
-def test_llm_status_route_reports_local_gemma_configuration(monkeypatch: MonkeyPatch) -> None:
+def test_llm_status_route_reports_local_gemma_configuration(
+    monkeypatch: MonkeyPatch, tmp_path: Path
+) -> None:
+    # Use a real temp file so model_path_exists is OS-independent (a hardcoded
+    # /mnt/e/... path only exists under WSL and breaks on native Windows).
+    model_file = tmp_path / "gemma-4-E2B-it-Q4_K_M.gguf"
+    model_file.write_bytes(b"")
     monkeypatch.setenv("EXAMSOLVER_LLM_PROVIDER", "local_gguf")
     monkeypatch.setenv("EXAMSOLVER_LLM_BASE_URL", "http://127.0.0.1:8080/v1")
     monkeypatch.setenv("EXAMSOLVER_LLM_MODEL", "gemma-4-E2B-it-Q4_K_M")
-    monkeypatch.setenv("EXAMSOLVER_LLM_MODEL_PATH", "/mnt/e/gemma 4/gemma-4-E2B-it-Q4_K_M.gguf")
+    monkeypatch.setenv("EXAMSOLVER_LLM_MODEL_PATH", str(model_file))
     monkeypatch.setattr(
         "examsolver.services.explanation.probe_local_llm",
         lambda config: {
@@ -99,7 +107,7 @@ def test_solve_route_delegates_to_service() -> None:
     assert response.success is True
     assert response.question_type == "derivative"
     assert response.skill == "calculus.derivative"
-    assert response.answer == "$\\frac{d}{dx}(x^2) = 2x$"
+    assert response.answer == "$\\frac{d}{dx}\\left(x^{2}\\right) = 2 x$"
 
 
 def test_solve_history_and_get_solve_routes() -> None:
@@ -123,7 +131,7 @@ def test_export_markdown_route_returns_stored_solve_artifact() -> None:
     body = bytes(response.body).decode("utf-8")
     assert "## 题目" in body
     assert "求 x^2 对 x 的导数" in body
-    assert "$\\frac{d}{dx}(x^2) = 2x$" in body
+    assert "$\\frac{d}{dx}\\left(x^{2}\\right) = 2 x$" in body
 
 
 def test_export_markdown_route_raises_404_for_missing_id() -> None:

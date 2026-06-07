@@ -18,11 +18,11 @@
 
 ## §1 获取 GPT-OSS GGUF（推荐路径）
 
-### 现状
+### 先决条件
 
-你硬盘上有：
-- `E:\AI\models\gpt-oss-20b\` — **HuggingFace safetensors 原版**（不能直接喂 llama-server）
-- `E:\gemma 4\gemma-4-E2B-it-Q4_K_M.gguf` — Gemma GGUF
+你需要本机存有：
+- **GPT-OSS 20B**：HuggingFace safetensors 原版（不能直接喂 llama-server）或已量化的 GGUF
+- **Gemma 4**：作为默认 fallback 的 GGUF（路径由 `$env:EXAMSOLVER_GEMMA4_GGUF_PATH` 指向）
 
 llama-server 需要 GGUF。三条路：
 
@@ -39,10 +39,10 @@ llama-server 需要 GGUF。三条路：
 gpt-oss-20b-Q4_K_M.gguf   (~12 GB)
 ```
 
-放到默认期望位置：
+放到本机任意位置，然后通过环境变量告诉脚本：
 
-```
-E:\AI\models\gpt-oss-20b\gpt-oss-20b-Q4_K_M.gguf
+```powershell
+$env:EXAMSOLVER_GPT_OSS_20B_PATH = "<your-models-dir>\gpt-oss-20b\gpt-oss-20b-Q4_K_M.gguf"
 ```
 
 > [!tip] 显存预算
@@ -52,28 +52,28 @@ E:\AI\models\gpt-oss-20b\gpt-oss-20b-Q4_K_M.gguf
 
 ### 路径 B · 自己量化（你只下了 safetensors 时）
 
-需要 llama.cpp 工具。**估时 30-60 分钟 + 模型 + 量化空间**：
+需要 llama.cpp 工具。**估时 30-60 分钟 + 模型 + 量化空间**。把 `<llama-cpp-dir>` 替换成你本机的 llama.cpp 克隆路径、`<gpt-oss-dir>` 替换成 safetensors 所在目录：
 
 ```powershell
 # 1. 克隆 llama.cpp（如果还没）
-git clone https://github.com/ggerganov/llama.cpp E:\llama.cpp
-cd E:\llama.cpp
+git clone https://github.com/ggerganov/llama.cpp <llama-cpp-dir>
+cd <llama-cpp-dir>
 pip install -r requirements.txt
 
 # 2. safetensors → fp16 GGUF
 python convert_hf_to_gguf.py `
-    E:\AI\models\gpt-oss-20b `
-    --outfile E:\AI\models\gpt-oss-20b\gpt-oss-20b-f16.gguf `
+    <gpt-oss-dir> `
+    --outfile <gpt-oss-dir>\gpt-oss-20b-f16.gguf `
     --outtype f16
 
 # 3. 量化到 Q4_K_M（编译过的 llama-quantize.exe）
 .\build\bin\llama-quantize.exe `
-    E:\AI\models\gpt-oss-20b\gpt-oss-20b-f16.gguf `
-    E:\AI\models\gpt-oss-20b\gpt-oss-20b-Q4_K_M.gguf `
+    <gpt-oss-dir>\gpt-oss-20b-f16.gguf `
+    <gpt-oss-dir>\gpt-oss-20b-Q4_K_M.gguf `
     Q4_K_M
 
 # 4. 删 fp16 中间产物（占空间）
-Remove-Item E:\AI\models\gpt-oss-20b\gpt-oss-20b-f16.gguf
+Remove-Item <gpt-oss-dir>\gpt-oss-20b-f16.gguf
 ```
 
 ### 路径 C · Ollama 用户
@@ -92,18 +92,31 @@ $env:EXAMSOLVER_LLM_MODEL = "gpt-oss:20b"
 
 ## §2 启动方式
 
+### 一次性配置环境变量
+
+启动脚本读这三个环境变量，建议加到你的 PowerShell `$PROFILE`：
+
+```powershell
+$env:EXAMSOLVER_LLAMA_SERVER       = "<absolute path to llama-server.exe>"
+$env:EXAMSOLVER_GEMMA4_GGUF_PATH   = "<absolute path to gemma 4 GGUF>"
+$env:EXAMSOLVER_GEMMA4_MMPROJ_PATH = "<absolute path to gemma 4 mmproj>"
+$env:EXAMSOLVER_GPT_OSS_20B_PATH   = "<absolute path to gpt-oss-20b GGUF>"
+```
+
+未设置时也可以每次启动传参覆盖（见参数表）。
+
 ### 一键启栈
 
 ```powershell
 .\scripts\start-examsolver-with-gpt-oss.ps1
 ```
 
-参数（全部可选）：
+参数（全部可选，默认值来自上面的环境变量）：
 
-| 参数 | 默认 | 说明 |
+| 参数 | 默认源 | 说明 |
 |---|---|---|
-| `-LlamaServer` | `D:\ollma\llama-server.exe` | llama-server.exe 路径 |
-| `-ModelPath` | `E:\AI\models\gpt-oss-20b\gpt-oss-20b-Q4_K_M.gguf` | GGUF 路径 |
+| `-LlamaServer` | `$env:EXAMSOLVER_LLAMA_SERVER` | llama-server.exe 路径 |
+| `-ModelPath` | `$env:EXAMSOLVER_GPT_OSS_20B_PATH` | GGUF 路径 |
 | `-LlmPort` | 8080 | llama-server 端口 |
 | `-AppPort` | 8000 | Examsolver FastAPI 端口 |
 | `-ContextSize` | 32768 | 上下文长度（最大 131072，但吃显存）|
@@ -144,11 +157,10 @@ $env:EXAMSOLVER_LLM_MAX_TOKENS = "2048"
 
 GPT-OSS 用 OpenAI 自家 Harmony 模板（不是 chatml）。`start-gpt-oss-local-llm.ps1` 已经传了 `--jinja`，最新 llama.cpp 会从 GGUF metadata 自动用 Harmony。**无需手动配置**。
 
-如果 llama-server 报 "no chat template"：
+如果 llama-server 报 "no chat template"，传一个本地的 `chat_template.jinja`：
 
 ```powershell
-# 用 HF 原版的 chat_template.jinja
-.\scripts\start-gpt-oss-local-llm.ps1 -ChatTemplate "E:\AI\models\gpt-oss-20b\chat_template.jinja"
+.\scripts\start-gpt-oss-local-llm.ps1 -ChatTemplate "<path-to-chat_template.jinja>"
 ```
 
 ### Reasoning effort
@@ -163,7 +175,7 @@ llama-server `response_format={"type":"json_schema","strict":true}` 兼容 GPT-O
 
 ## §5 切换前快速验证
 
-GGUF 到位后，先跑一遍：
+GGUF 到位 + 环境变量设好后，先跑一遍：
 
 ```powershell
 # 1. 起 llama-server
@@ -192,8 +204,8 @@ uv run python scripts/smoke.py "汽车 ABS 起到什么作用？"
 
 | 症状 | 处理 |
 |---|---|
-| GGUF 找不到 | 检查 `-ModelPath`，确认文件真存在 |
-| `chat template not found` | 加 `-ChatTemplate "E:\AI\models\gpt-oss-20b\chat_template.jinja"` |
+| GGUF 找不到 | 检查 `$env:EXAMSOLVER_GPT_OSS_20B_PATH` 或 `-ModelPath`，确认文件真存在 |
+| `chat template not found` | 加 `-ChatTemplate "<path-to-chat_template.jinja>"` |
 | 显存爆 | 减 `-ContextSize 8192`，或换 Q3_K_M |
 | 中文质量差 | GPT-OSS 中文略弱于 Gemma 中文版；高质量场景走云端 Claude（router 自然路由）|
 | JSON 输出不稳 | llama-server 用 `--grammar` 强约束 + 重试（M2-03 已加重试 1 次）|
@@ -208,4 +220,4 @@ uv run python scripts/smoke.py "汽车 ABS 起到什么作用？"
 
 ---
 
-*文档版本：v1.0 · GGUF 到位后跑一遍 §5 验证，然后把 README 主示例换成 GPT-OSS 脚本。*
+*文档版本：v1.1 · GGUF 到位后跑一遍 §5 验证，然后把 README 主示例换成 GPT-OSS 脚本。*

@@ -1,7 +1,8 @@
+# Defaults read from env vars (see start-examsolver-with-gemma.ps1 header for names).
 param(
-  [string]$LlamaServer = "D:\ollma\llama-server.exe",
-  [string]$ModelPath = "E:\gemma 4\gemma-4-E2B-it-Q4_K_M.gguf",
-  [string]$MmprojPath = "E:\gemma 4\mmproj-F16.gguf",
+  [string]$LlamaServer = $(if ($env:EXAMSOLVER_LLAMA_SERVER) { $env:EXAMSOLVER_LLAMA_SERVER } else { "llama-server.exe" }),
+  [string]$ModelPath = $env:EXAMSOLVER_GEMMA4_GGUF_PATH,
+  [string]$MmprojPath = $env:EXAMSOLVER_GEMMA4_MMPROJ_PATH,
   [int]$Port = 8080,
   [int]$ContextSize = 8192,
   [int]$GpuLayers = 999

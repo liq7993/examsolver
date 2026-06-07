@@ -567,7 +567,7 @@ def pick_llm(task_kind: str, needs_vision: bool) -> LLMClient:
 
 ### 9.3 本地客户端
 
-- 默认：Gemma 4 GGUF via llama-server (E:\gemma 4\)
+- 默认：Gemma 4 GGUF via llama-server（路径由 `$env:EXAMSOLVER_GEMMA4_GGUF_PATH` 指向）
 - 已接入 preset：GPT-OSS 20B / 120B（见 ADR-008，OpenAI 开源 Apache-2.0）
 - 接口：OpenAI 兼容（llama-server 提供）
 - 切换：改一个环境变量 `EXAMSOLVER_LLM_PRESET`（`gemma4` / `gpt-oss-20b` / `gpt-oss-120b`），不改代码。preset 决定 model / model_path / timeout / max_tokens 默认值，可再用 per-key 环境变量覆盖

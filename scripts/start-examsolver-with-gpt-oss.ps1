@@ -1,6 +1,9 @@
+# Set these env vars once, or pass -LlamaServer / -ModelPath each run:
+#   $env:EXAMSOLVER_LLAMA_SERVER     = "<absolute path to llama-server.exe>"
+#   $env:EXAMSOLVER_GPT_OSS_20B_PATH = "<absolute path to gpt-oss-20b GGUF>"
 param(
-  [string]$LlamaServer = "D:\ollma\llama-server.exe",
-  [string]$ModelPath = "E:\AI\models\gpt-oss-20b\gpt-oss-20b-Q4_K_M.gguf",
+  [string]$LlamaServer = $(if ($env:EXAMSOLVER_LLAMA_SERVER) { $env:EXAMSOLVER_LLAMA_SERVER } else { "llama-server.exe" }),
+  [string]$ModelPath = $env:EXAMSOLVER_GPT_OSS_20B_PATH,
   [int]$LlmPort = 8080,
   [int]$AppPort = 8000,
   [int]$ContextSize = 32768,

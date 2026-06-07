@@ -1,7 +1,11 @@
+# Set these env vars once, or pass -LlamaServer / -ModelPath / -MmprojPath each run:
+#   $env:EXAMSOLVER_LLAMA_SERVER       = "<absolute path to llama-server.exe>"
+#   $env:EXAMSOLVER_GEMMA4_GGUF_PATH   = "<absolute path to gemma 4 GGUF>"
+#   $env:EXAMSOLVER_GEMMA4_MMPROJ_PATH = "<absolute path to gemma 4 mmproj>"
 param(
-  [string]$LlamaServer = "D:\ollma\llama-server.exe",
-  [string]$ModelPath = "E:\gemma 4\gemma-4-E2B-it-Q4_K_M.gguf",
-  [string]$MmprojPath = "E:\gemma 4\mmproj-F16.gguf",
+  [string]$LlamaServer = $(if ($env:EXAMSOLVER_LLAMA_SERVER) { $env:EXAMSOLVER_LLAMA_SERVER } else { "llama-server.exe" }),
+  [string]$ModelPath = $env:EXAMSOLVER_GEMMA4_GGUF_PATH,
+  [string]$MmprojPath = $env:EXAMSOLVER_GEMMA4_MMPROJ_PATH,
   [int]$LlmPort = 8080,
   [int]$AppPort = 8000,
   [switch]$NoBrowser

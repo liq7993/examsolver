@@ -563,7 +563,7 @@
 - [x] 接入文档 `docs/gpt-oss-setup.md`（获取 GGUF 三路径 + Harmony 模板 + 故障表）
 
 **待 GGUF 到位后验证**（按 `docs/gpt-oss-setup.md §5`）：
-- [ ] 把 GGUF 放到 `E:\AI\models\gpt-oss-20b\gpt-oss-20b-Q4_K_M.gguf`
+- [ ] 把 GGUF 放到 `$env:EXAMSOLVER_GPT_OSS_20B_PATH` 指向的位置
 - [ ] `start-gpt-oss-local-llm.ps1` 起 llama-server，`curl /v1/models` 返回 gpt-oss-20b
 - [ ] `start-examsolver-with-gpt-oss.ps1` 全栈起来，smoke.py 跑通一题
 - [ ] 路由准确率回归：10 条样本 ≥ 8 条与 Gemma 一致（参 `docs/m2-routing-eval.md`）

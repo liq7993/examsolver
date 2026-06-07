@@ -1,6 +1,7 @@
+# Defaults read from env vars (see start-examsolver-with-gpt-oss.ps1 header for names).
 param(
-  [string]$LlamaServer = "D:\ollma\llama-server.exe",
-  [string]$ModelPath = "E:\AI\models\gpt-oss-20b\gpt-oss-20b-Q4_K_M.gguf",
+  [string]$LlamaServer = $(if ($env:EXAMSOLVER_LLAMA_SERVER) { $env:EXAMSOLVER_LLAMA_SERVER } else { "llama-server.exe" }),
+  [string]$ModelPath = $env:EXAMSOLVER_GPT_OSS_20B_PATH,
   [int]$Port = 8080,
   [int]$ContextSize = 32768,
   [int]$GpuLayers = 999,
@@ -39,7 +40,7 @@ GPT-OSS GGUF not found at: $ModelPath
 
 Get a GGUF first (see docs/gpt-oss-setup.md):
   - Recommended: download ggml-org/gpt-oss-20b-GGUF from HuggingFace
-  - Or convert E:\AI\models\gpt-oss-20b\ (safetensors) via llama.cpp's
+  - Or convert a safetensors checkpoint via llama.cpp's
     convert_hf_to_gguf.py + llama-quantize
 "@
 }

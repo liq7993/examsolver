@@ -74,8 +74,8 @@ def test_capabilities_route_lists_registered_skills() -> None:
 def test_llm_status_route_reports_local_gemma_configuration(
     monkeypatch: MonkeyPatch, tmp_path: Path
 ) -> None:
-    # Use a real temp file so model_path_exists is OS-independent (a hardcoded
-    # /mnt/e/... path only exists under WSL and breaks on native Windows).
+    # Use a real temp file so model_path_exists is OS-independent (any hardcoded
+    # absolute path would only exist on the dev machine and break elsewhere).
     model_file = tmp_path / "gemma-4-E2B-it-Q4_K_M.gguf"
     model_file.write_bytes(b"")
     monkeypatch.setenv("EXAMSOLVER_LLM_PROVIDER", "local_gguf")

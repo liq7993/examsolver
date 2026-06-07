@@ -20,24 +20,28 @@ def database_path() -> Path:
 # EXAMSOLVER_LLM_* env var still overrides the preset's default value.
 #
 # Adding a new preset = adding one entry. No code changes elsewhere.
+# model_path defaults are intentionally empty. Set them per-environment via
+# EXAMSOLVER_LLM_MODEL_PATH (single-value override) or by exporting the
+# corresponding env var from your launcher script. An empty path leaves
+# `model_path_exists` False, which the runtime treats as "local LLM disabled".
 _LLM_PRESETS: dict[str, dict[str, str | float | int]] = {
     "gemma4": {
         "model": "gemma-4-E2B-it-Q4_K_M",
-        "model_path": "/mnt/e/gemma 4/gemma-4-E2B-it-Q4_K_M.gguf",
+        "model_path": "",
         "timeout_seconds": 60.0,
         "max_tokens": 256,
         "temperature": 0.2,
     },
     "gpt-oss-20b": {
         "model": "gpt-oss-20b",
-        "model_path": "/mnt/e/AI/models/gpt-oss-20b/gpt-oss-20b-Q4_K_M.gguf",
+        "model_path": "",
         "timeout_seconds": 120.0,
         "max_tokens": 1024,
         "temperature": 0.2,
     },
     "gpt-oss-120b": {
         "model": "gpt-oss-120b",
-        "model_path": "/mnt/e/AI/models/gpt-oss-120b/gpt-oss-120b-Q4_K_M.gguf",
+        "model_path": "",
         "timeout_seconds": 240.0,
         "max_tokens": 2048,
         "temperature": 0.2,

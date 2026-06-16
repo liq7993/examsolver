@@ -7,6 +7,7 @@ import json
 import logging
 import sys
 from dataclasses import asdict, is_dataclass
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -50,6 +51,8 @@ def _to_jsonable(value: Any) -> Any:
         return [_to_jsonable(item) for item in value]
     if isinstance(value, dict):
         return {str(key): _to_jsonable(item) for key, item in value.items()}
+    if isinstance(value, (datetime, date)):
+        return value.isoformat()
     return value
 
 

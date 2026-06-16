@@ -439,6 +439,7 @@ dependencies = [
     { name = "python-multipart" },
     { name = "sentence-transformers" },
     { name = "sqlite-vec" },
+    { name = "sympy" },
     { name = "uvicorn" },
 ]
 
@@ -506,6 +507,7 @@ requires-dist = [
     { name = "sentence-transformers", marker = "extra == 'rag'", specifier = ">=5" },
     { name = "sqlite-vec", specifier = ">=0.1" },
     { name = "sqlite-vec", marker = "extra == 'rag'", specifier = ">=0.1" },
+    { name = "sympy", specifier = ">=1.14" },
     { name = "uvicorn", specifier = ">=0.30" },
 ]
 provides-extras = ["dev", "llm", "ocr", "rag", "export"]

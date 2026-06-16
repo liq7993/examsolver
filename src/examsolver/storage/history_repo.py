@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from dataclasses import asdict, dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -88,7 +89,7 @@ def save_history(
                     response.skill,
                     int(response.success),
                     json.dumps(asdict(question), ensure_ascii=False),
-                    json.dumps(asdict(response), ensure_ascii=False),
+                    json.dumps(asdict(response), ensure_ascii=False, default=_json_default),
                 ),
             )
     except (sqlite3.Error, OSError) as exc:
@@ -236,7 +237,7 @@ def _note_from_json(value: Any) -> NoteEntry | None:
         citations=_citations_from_json(value.get("citations")),
         subject=value.get("subject") if value.get("subject") is None else str(value.get("subject")),
         question_type=str(value.get("question_type", "")),
-        created_at=None,
+        created_at=_datetime_from_json(value.get("created_at")),
     )
 
 
@@ -298,3 +299,18 @@ def _snippet(question: str) -> str:
 
 def _clamp_limit(limit: int) -> int:
     return min(max(limit, 1), MAX_LIMIT)
+
+
+def _json_default(value: Any) -> str:
+    if isinstance(value, datetime):
+        return value.isoformat()
+    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
+
+
+def _datetime_from_json(value: Any) -> datetime | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return None

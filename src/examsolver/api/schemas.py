@@ -6,7 +6,16 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from examsolver.contracts import SolveRequest, SolveResponse, StudentExplanation
+from examsolver.contracts import (
+    Citation,
+    Flashcard,
+    FormulaCard,
+    NoteEntry,
+    SolveRequest,
+    SolveResponse,
+    Step,
+    StudentExplanation,
+)
 from examsolver.storage.history_repo import HistoryItem, HistoryPage
 
 
@@ -16,9 +25,15 @@ class SolveRequestBody(BaseModel):
     question: str = Field(..., min_length=1)
     subject: str | None = None
     context: dict[str, Any] | None = None
+    image_paths: list[str] = Field(default_factory=list)
 
     def to_contract(self) -> SolveRequest:
-        return SolveRequest(question=self.question, subject=self.subject, context=self.context)
+        return SolveRequest(
+            question=self.question,
+            subject=self.subject,
+            context=self.context,
+            image_paths=self.image_paths,
+        )
 
 
 class StudentExplanationBody(BaseModel):
@@ -41,6 +56,102 @@ class StudentExplanationBody(BaseModel):
         )
 
 
+class StepBody(BaseModel):
+    index: int
+    description: str
+    formula_latex: str | None
+    image_hint: str | None
+
+    @classmethod
+    def from_contract(cls, step: Step) -> StepBody:
+        return cls(
+            index=step.index,
+            description=step.description,
+            formula_latex=step.formula_latex,
+            image_hint=step.image_hint,
+        )
+
+
+class CitationBody(BaseModel):
+    source: str
+    chunk_id: str
+    page: int | None
+    snippet: str
+
+    @classmethod
+    def from_contract(cls, citation: Citation) -> CitationBody:
+        return cls(
+            source=citation.source,
+            chunk_id=citation.chunk_id,
+            page=citation.page,
+            snippet=citation.snippet,
+        )
+
+
+class FormulaCardBody(BaseModel):
+    title: str
+    formula_latex: str
+    explanation: str
+
+    @classmethod
+    def from_contract(cls, card: FormulaCard) -> FormulaCardBody:
+        return cls(
+            title=card.title,
+            formula_latex=card.formula_latex,
+            explanation=card.explanation,
+        )
+
+
+class FlashcardBody(BaseModel):
+    front: str
+    back: str
+    tag: str
+
+    @classmethod
+    def from_contract(cls, card: Flashcard) -> FlashcardBody:
+        return cls(front=card.front, back=card.back, tag=card.tag)
+
+
+class NoteEntryBody(BaseModel):
+    solve_id: str
+    title: str
+    question_latex: str
+    steps: list[StepBody]
+    answer: str | dict[str, Any] | None
+    student_explanation: StudentExplanationBody | None
+    common_mistakes: list[str]
+    related_formulas: list[FormulaCardBody]
+    flashcards: list[FlashcardBody]
+    citations: list[CitationBody]
+    subject: str | None
+    question_type: str
+    created_at: str | None
+
+    @classmethod
+    def from_contract(cls, note: NoteEntry) -> NoteEntryBody:
+        return cls(
+            solve_id=note.solve_id,
+            title=note.title,
+            question_latex=note.question_latex,
+            steps=[StepBody.from_contract(step) for step in note.steps],
+            answer=note.answer,
+            student_explanation=(
+                StudentExplanationBody.from_contract(note.student_explanation)
+                if note.student_explanation is not None
+                else None
+            ),
+            common_mistakes=note.common_mistakes,
+            related_formulas=[
+                FormulaCardBody.from_contract(card) for card in note.related_formulas
+            ],
+            flashcards=[FlashcardBody.from_contract(card) for card in note.flashcards],
+            citations=[CitationBody.from_contract(citation) for citation in note.citations],
+            subject=note.subject,
+            question_type=note.question_type,
+            created_at=note.created_at.isoformat() if note.created_at is not None else None,
+        )
+
+
 class SolveResponseBody(BaseModel):
     """HTTP response body for solve responses."""
 
@@ -53,6 +164,10 @@ class SolveResponseBody(BaseModel):
     answer: str | dict[str, Any] | None
     message: str
     student_explanation: StudentExplanationBody | None = None
+    citations: list[CitationBody]
+    fallback_reasons: list[str]
+    diagnostics: dict[str, Any]
+    note: NoteEntryBody | None
 
     @classmethod
     def from_contract(cls, response: SolveResponse) -> SolveResponseBody:
@@ -71,7 +186,15 @@ class SolveResponseBody(BaseModel):
                 if explanation is not None
                 else None
             ),
+            citations=[CitationBody.from_contract(citation) for citation in response.citations],
+            fallback_reasons=response.fallback_reasons,
+            diagnostics=response.diagnostics,
+            note=NoteEntryBody.from_contract(response.note) if response.note is not None else None,
         )
+
+
+class UploadedImageBody(BaseModel):
+    image_path: str
 
 
 class HistoryItemBody(BaseModel):

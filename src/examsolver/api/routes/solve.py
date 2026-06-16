@@ -2,13 +2,33 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 
-from examsolver.api.schemas import HistoryPageBody, SolveRequestBody, SolveResponseBody
+from examsolver.api.schemas import (
+    HistoryPageBody,
+    SolveRequestBody,
+    SolveResponseBody,
+    UploadedImageBody,
+)
 from examsolver.services.solve_service import solve
 from examsolver.storage.history_repo import get_response, list_history
+from examsolver.storage.uploads import InvalidImageUpload, store_image_upload
 
 router = APIRouter(tags=["solve"])
+
+
+@router.post("/solve/images", response_model=UploadedImageBody)
+async def upload_solve_image(file: UploadFile = File(...)) -> UploadedImageBody:
+    """Store a browser-uploaded image for the OCR/vision solve pipeline."""
+
+    try:
+        path = store_image_upload(
+            content=await file.read(),
+            content_type=file.content_type,
+        )
+    except InvalidImageUpload as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return UploadedImageBody(image_path=str(path))
 
 
 @router.post("/solve", response_model=SolveResponseBody)

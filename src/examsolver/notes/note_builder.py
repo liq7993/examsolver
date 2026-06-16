@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from examsolver.contracts import NormalizedQuestion, NoteEntry, SolveResult
 
 
@@ -21,6 +23,7 @@ def build_note(solve_result: SolveResult, normalized: NormalizedQuestion) -> Not
         citations=solve_result.citations,
         subject=normalized.subject,
         question_type=solve_result.question_type,
+        created_at=_created_at(normalized),
     )
 
 
@@ -34,3 +37,13 @@ def _common_mistakes(solve_result: SolveResult) -> list[str]:
     if not isinstance(mistakes, list):
         return []
     return [mistake for mistake in mistakes if isinstance(mistake, str)]
+
+
+def _created_at(normalized: NormalizedQuestion) -> datetime | None:
+    value = normalized.hints.get("created_at")
+    if not isinstance(value, str):
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return None

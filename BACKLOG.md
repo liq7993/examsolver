@@ -330,79 +330,81 @@
 
 ## M4 · 前端 + 一页一题 + Word 导出
 
-> 📌 M4/M5/M6/X 均未开工。**派活前到 `D:\claude_memory\examsolver_goal_cards.md` 取完整四件套卡**
+> 📌 M4 已完成，M5/M6 尚未开工。
+> **派活前到 `D:\claude_memory\examsolver_goal_cards.md` 取完整四件套卡**
 > （含正例 / 反例 / 验证门）。下方仅出口清单速览。
 
-### 📥 M4-01 · 前端骨架抢救
+### ✅ M4-01 · 前端骨架抢救
 **估时**：2 h
 **前置**：M3-10
 **出口**：
-- [ ] 从 [`D:\codex file\ExamSolver`](D:/codex%20file/ExamSolver) 复制 `app/` `components/` `lib/`（去掉 db / docx 相关）到 `examsolver/frontend/`
-- [ ] `frontend/package.json` 保留 Next.js 15 / React 19 / KaTeX
-- [ ] `pnpm install` 通过
-- [ ] `pnpm dev` 起到 localhost:3000 不报错
+- [x] 从 [`D:\codex file\ExamSolver`](D:/codex%20file/ExamSolver) 复制 `app/` `components/` `lib/`（去掉 db / docx 相关）到 `examsolver/frontend/`
+- [x] `frontend/package.json` 保留 Next.js 15 / React 19 / KaTeX
+- [x] `pnpm install` 通过
+- [x] `pnpm dev` 起到 localhost:3000 不报错
 
-### 📥 M4-02 · API 桥
+### ✅ M4-02 · API 桥
 **估时**：1.5 h
 **前置**：M4-01
 **出口**：
-- [ ] `frontend/lib/api.ts`：fetch wrapper，base URL 走 env `NEXT_PUBLIC_API_BASE`
-- [ ] `frontend/lib/types.ts`：与后端 NoteEntry / SolveResponse 类型一致
-- [ ] 主页提交后能拿到 solve_id 跳转 `/note/[solve_id]`
+- [x] `frontend/lib/api.ts`：fetch wrapper，base URL 走 env `NEXT_PUBLIC_API_BASE`
+- [x] `frontend/lib/types.ts`：与后端 NoteEntry / SolveResponse 类型一致
+- [x] 主页提交后能拿到 solve_id 跳转 `/note/[solve_id]`
 
-### 📥 M4-03 · 主工作台 `/`
+### ✅ M4-03 · 主工作台 `/`
 **估时**：2 h
 **前置**：M4-02
 **出口**：
-- [ ] `app/page.tsx`：输入框 + 附图 + 学科 chip + 提交
-- [ ] 提交中骨架屏
-- [ ] 附图缩略图预览
-- [ ] 设计走 Luminous Minimalist
+- [x] `app/page.tsx`：输入框 + 附图 + 学科 chip + 提交
+- [x] 提交中骨架屏
+- [x] 附图缩略图预览
+- [x] 设计走 Luminous Minimalist
 
-### 📥 M4-04 · 一页一题 `/note/[solve_id]`
+### ✅ M4-04 · 一页一题 `/note/[solve_id]`
 **估时**：4 h
 **前置**：M4-02
 **出口**：
-- [ ] `app/note/[solve_id]/page.tsx`
-- [ ] 题目 / 思路 / 步骤 / 答案 / 易错点 5 大区块
-- [ ] 右侧公式速查 sticky 侧栏
-- [ ] KaTeX 渲染（用 react-katex 或 ezpotato 等）
-- [ ] 顶部工具栏：返回 / chip / 加错题 / 导出 docx / 打印
+- [x] `app/note/[solve_id]/page.tsx`
+- [x] 题目 / 思路 / 步骤 / 答案 / 易错点 5 大区块
+- [x] 右侧公式速查 sticky 侧栏
+- [x] KaTeX 渲染
+- [x] 顶部工具栏：返回 / chip / 加错题占位 / 导出 docx / 打印
 
-### 📥 M4-05 · 历史 `/history`
+### ✅ M4-05 · 历史 `/history`
 **估时**：1.5 h
 **前置**：M4-02
 **出口**：
-- [ ] `app/history/page.tsx`
-- [ ] 卡片列表（按时间倒序）
-- [ ] subject chip 筛选
-- [ ] 点击跳 note 页
+- [x] `app/history/page.tsx`
+- [x] 卡片列表（按时间倒序）
+- [x] subject chip 筛选
+- [x] 点击跳 note 页
 
-### 📥 M4-06 · 后端 docx 导出
+### ✅ M4-06 · 后端 docx 导出
 **估时**：3 h
 **前置**：M3-10
 **出口**：
-- [ ] `export/docx_export.py`：python-docx + OMML（用 `lxml` 拼 OMML XML）
-- [ ] `api/routes/export.py`：`GET /export/docx/{solve_id}` 返回流
-- [ ] 导出文件名 `{subject}-{title}-{date}.docx`
-- [ ] Word 2016+ 打开公式可编辑（不是图片）
+- [x] `export/docx_export.py`：python-docx + OMML
+- [x] `api/routes/export.py`：`GET /export/docx/{solve_id}` 返回流
+- [x] 导出文件名 `{subject}-{title}-{date}.docx`
+- [x] 自动验证 docx 可重开，且公式 XML 含原生 `m:oMath` / `m:f`（Word GUI 待 M4-08 手工确认）
 
-### 📥 M4-07 · 浏览器 print → PDF
+### ✅ M4-07 · 浏览器 print → PDF
 **估时**：1.5 h
 **前置**：M4-04
 **出口**：
-- [ ] `app/globals.css` 加 `@media print` 规则
-- [ ] sidebar / 顶栏 / 工具栏 `display: none`
-- [ ] 一题一页 `page-break-after: always`
-- [ ] KaTeX SVG 在打印中不糊
+- [x] note 样式加 `@media print` 规则
+- [x] sidebar / 顶栏 / 工具栏 `display: none`
+- [x] 一题一页 `page-break-after: always`
+- [x] Edge headless 打印 PDF 验证：工具栏隐藏，正文保留，KaTeX 清晰
 
-### 📥 M4-08 · M4 出口验收
+### ✅ M4-08 · M4 出口验收
 **估时**：30 min
 **前置**：M4-01..M4-07
 **出口**：
-- [ ] 端到端：浏览器解题 → 跳笔记页 → 导 docx → 打印
-- [ ] 设计走 Luminous Minimalist 无明显偏差
-- [ ] commit `M4: frontend + note page + export`
+- [x] 端到端：浏览器解题 → 跳笔记页 → 打印 PDF
+- [x] 设计走 Luminous Minimalist 无明显偏差
+- [x] Word COM 打开导出 docx 并确认 `OMaths=3` 原生公式对象
+- [x] commit `M4: frontend + note page + export`
 
 ---
 

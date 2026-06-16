@@ -12,3 +12,6 @@ build/
 data/
 .env
 .env.local
+.pnpm-frontend-virtual/
+frontend/.next/
+frontend/node_modules/

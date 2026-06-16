@@ -1,12 +1,13 @@
 from pathlib import Path
 
 from fastapi import HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pytest import MonkeyPatch
 from starlette.responses import Response
 
 from examsolver.api.app import STATIC_DIR, create_app
 from examsolver.api.routes.capabilities import capabilities
-from examsolver.api.routes.export import export_markdown
+from examsolver.api.routes.export import export_docx, export_markdown
 from examsolver.api.routes.health import health, info, ready
 from examsolver.api.routes.llm import local_llm_status
 from examsolver.api.routes.solve import get_solve, solve_history, solve_question
@@ -16,6 +17,17 @@ from examsolver.skills.base import PersistenceError
 
 def test_health_route() -> None:
     assert health() == {"status": "ok"}
+
+
+def test_local_dev_cors_allows_non_default_frontend_port() -> None:
+    app = create_app()
+    cors_middleware = next(
+        middleware for middleware in app.user_middleware if middleware.cls is CORSMiddleware
+    )
+
+    assert cors_middleware.kwargs["allow_origin_regex"] == (
+        r"^http://(localhost|127\.0\.0\.1):\d+$"
+    )
 
 
 def test_ready_route_reports_dependencies(monkeypatch: MonkeyPatch) -> None:
@@ -108,6 +120,9 @@ def test_solve_route_delegates_to_service() -> None:
     assert response.question_type == "derivative"
     assert response.skill == "calculus.derivative"
     assert response.answer == "$\\frac{d}{dx}\\left(x^{2}\\right) = 2 x$"
+    assert response.note is not None
+    assert response.note.question_latex == "求 x^2 对 x 的导数"
+    assert response.note.steps[0].description
 
 
 def test_solve_history_and_get_solve_routes() -> None:
@@ -137,6 +152,28 @@ def test_export_markdown_route_returns_stored_solve_artifact() -> None:
 def test_export_markdown_route_raises_404_for_missing_id() -> None:
     try:
         export_markdown("missing")
+    except HTTPException as exc:
+        assert exc.status_code == 404
+    else:
+        raise AssertionError("expected HTTPException")
+
+
+def test_export_docx_route_returns_editable_word_file() -> None:
+    solved = solve_question(SolveRequestBody(question="求 x^2 对 x 的导数"))
+
+    response = export_docx(solved.solve_id)
+
+    assert response.media_type == (
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
+    assert bytes(response.body).startswith(b"PK")
+    assert "filename*=UTF-8''" in response.headers["Content-Disposition"]
+    assert ".docx" in response.headers["Content-Disposition"]
+
+
+def test_export_docx_route_raises_404_for_missing_id() -> None:
+    try:
+        export_docx("missing")
     except HTTPException as exc:
         assert exc.status_code == 404
     else:

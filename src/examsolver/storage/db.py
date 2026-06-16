@@ -26,6 +26,23 @@ CREATE TABLE IF NOT EXISTS solve_history (
 
 CREATE INDEX IF NOT EXISTS idx_solve_history_created_at
 ON solve_history(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS mistakes (
+    id TEXT PRIMARY KEY,
+    solve_id TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    question_type TEXT NOT NULL,
+    user_note TEXT,
+    review_count INTEGER DEFAULT 0,
+    last_review DATETIME,
+    created_at DATETIME NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_mistakes_subject
+ON mistakes(subject);
+
+CREATE INDEX IF NOT EXISTS idx_mistakes_created_at
+ON mistakes(created_at DESC);
 """
 
 

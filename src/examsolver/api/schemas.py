@@ -17,6 +17,7 @@ from examsolver.contracts import (
     StudentExplanation,
 )
 from examsolver.storage.history_repo import HistoryItem, HistoryPage
+from examsolver.storage.mistakes_repo import MistakeEntry
 
 
 class SolveRequestBody(BaseModel):
@@ -105,11 +106,11 @@ class FormulaCardBody(BaseModel):
 class FlashcardBody(BaseModel):
     front: str
     back: str
-    tag: str
+    card_type: str
 
     @classmethod
     def from_contract(cls, card: Flashcard) -> FlashcardBody:
-        return cls(front=card.front, back=card.back, tag=card.tag)
+        return cls(front=card.front, back=card.back, card_type=card.card_type)
 
 
 class NoteEntryBody(BaseModel):
@@ -277,5 +278,38 @@ class LLMStatusBody(BaseModel):
     server_model_count: int | None
     server_error: str | None
     timeout_seconds: float
-    max_tokens: int
     temperature: float
+    max_tokens: int
+
+
+class AddMistakeRequestBody(BaseModel):
+    solve_id: str = Field(..., min_length=1)
+    user_note: str | None = None
+
+
+class UpdateMistakeRequestBody(BaseModel):
+    user_note: str | None = None
+
+
+class MistakeEntryBody(BaseModel):
+    id: str
+    solve_id: str
+    subject: str
+    question_type: str
+    user_note: str | None
+    review_count: int
+    last_review: str | None
+    created_at: str
+
+    @classmethod
+    def from_repo(cls, entry: MistakeEntry) -> MistakeEntryBody:
+        return cls(
+            id=entry.id,
+            solve_id=entry.solve_id,
+            subject=entry.subject,
+            question_type=entry.question_type,
+            user_note=entry.user_note,
+            review_count=entry.review_count,
+            last_review=entry.last_review,
+            created_at=entry.created_at,
+        )

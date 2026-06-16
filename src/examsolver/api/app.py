@@ -14,6 +14,7 @@ from examsolver.api.routes.export import router as export_router
 from examsolver.api.routes.health import router as health_router
 from examsolver.api.routes.library import router as library_router
 from examsolver.api.routes.llm import router as llm_router
+from examsolver.api.routes.mistakes import router as mistakes_router
 from examsolver.api.routes.solve import router as solve_router
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
@@ -35,6 +36,7 @@ def create_app() -> FastAPI:
     app.include_router(llm_router)
     app.include_router(library_router)
     app.include_router(solve_router)
+    app.include_router(mistakes_router)
     app.include_router(export_router)
 
     @app.get("/", include_in_schema=False, name="frontend_index")

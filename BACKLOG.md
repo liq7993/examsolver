@@ -330,7 +330,7 @@
 
 ## M4 · 前端 + 一页一题 + Word 导出
 
-> 📌 M4 已完成，M5/M6 尚未开工。
+> 📌 M4 已完成；M5 主体（M5-01..08）已实现并按卡提交，M5-09 验收待手测（见下）；M6 未开工。
 > **派活前到 `D:\claude_memory\examsolver_goal_cards.md` 取完整四件套卡**
 > （含正例 / 反例 / 验证门）。下方仅出口清单速览。
 
@@ -418,75 +418,85 @@
 - [x] 输入 image bytes + prompt，输出 str
 - [x] 单测用 mock
 
-### 📥 M5-02 · 离线降级检测
+### ✅ M5-02 · 离线降级检测
 **估时**：1 h
 **前置**：M5-01
 **出口**：
-- [ ] `multimodal/fallback.py`：`check_cloud_reachable() -> bool`
-- [ ] 缓存 10s（避免每次解题都 ping）
-- [ ] 单测覆盖在线 / 离线两态
+- [x] `multimodal/fallback.py`：`check_cloud_reachable() -> bool`
+- [x] 缓存 10s（避免每次解题都 ping）
+- [x] 单测覆盖在线 / 离线两态
 
-### 📥 M5-03 · `vlm_node` + router needs_vision 判定
+### ✅ M5-03 · `vlm_node` + router needs_vision 判定
 **估时**：2 h
 **前置**：M5-01, M5-02
 **出口**：
-- [ ] `graph/nodes.py` 加 `vlm_node`
-- [ ] router_agent 设 `state.needs_vision`：image_paths 非空 + 题目含视觉关键词
-- [ ] 离线时 vlm_node 跳过，写 `state.fallback_reasons.append("vlm_offline")`
+- [x] `graph/nodes.py` 加 `vlm_node`
+- [x] router_agent 设 `state.needs_vision`：image_paths 非空 + 题目含视觉关键词
+- [x] 离线时 vlm_node 跳过，写 `state.fallback_reasons.append("vlm_offline")`
 
-### 📥 M5-04 · 新行星 `mechanism/` + `gear_train` skill
+### ✅ M5-04 · 新行星 `mechanism/` + `gear_train` skill
 **估时**：4 h
 **前置**：M5-03
 **出口**：
-- [ ] `skills/mechanism/{_meta.py,gear_train.py,prompts/gear_train_extract.zh.md}`
-- [ ] Type-H，needs_vision=True
-- [ ] 5 条 fixture（含图片描述）
-- [ ] 实测：上传一张齿轮图能返回正确传动比
+- [x] `skills/mechanism/{_meta.py,gear_train.py,prompts/gear_train_extract.zh.md}`
+- [x] Type-H，needs_vision=True
+- [x] 5 条 fixture（含图片描述）
+- [x] 自动化 e2e 代理通过：`tests/graph/test_mechanism_vision_e2e.py` 驱动真实编译图，
+      mock OCR/VLM/LLM 后断言 z1=24,z2=72,z3=20,z4=40 → 传动比 6（真实图 + 云 VLM
+      的现场验收归到 M5-09 手测）
 
-### 📥 M5-05 · 错题本数据层 + API
+### ✅ M5-05 · 错题本数据层 + API
 **估时**：2 h
 **前置**：M4-08
 **出口**：
-- [ ] `storage/mistakes_repo.py` + `mistakes` 表
-- [ ] `api/routes/mistakes.py`：POST/GET/PATCH/DELETE + 批量导出
-- [ ] 单测覆盖
+- [x] `storage/mistakes_repo.py` + `mistakes` 表
+- [x] `api/routes/mistakes.py`：POST/GET/PATCH/DELETE + 批量导出
+- [x] 单测覆盖
 
-### 📥 M5-06 · 错题本前端
+### ✅ M5-06 · 错题本前端
 **估时**：3 h
 **前置**：M5-05
 **出口**：
-- [ ] `frontend/app/mistakes/page.tsx`（按学科分组）
-- [ ] `frontend/app/mistakes/[subject]/page.tsx`
-- [ ] 加批注 / 移除 / 批量导出
-- [ ] 在 note 页"➕错题"按钮接通
+- [x] `frontend/app/mistakes/page.tsx`（按学科分组）
+- [x] `frontend/app/mistakes/[subject]/page.tsx`
+- [x] 加批注 / 移除 / 批量导出
+- [x] 在 note 页"➕错题"按钮接通
 
-### 📥 M5-07 · Flashcard 生成
+### ✅ M5-07 · Flashcard 生成
 **估时**：3 h
 **前置**：M4-08
 **出口**：
-- [ ] `notes/flashcard.py`：从 NoteEntry 抽 3 类卡（公式 / 概念 / 易错）
-- [ ] 在 `note_builder_node` 调用
-- [ ] LLM prompt 模板 `notes/prompts/flashcard_extract.zh.md`
-- [ ] 每个 note 至少出 2 张卡
+- [x] `notes/flashcard.py`：从 NoteEntry 抽 3 类卡（公式 / 概念 / 易错）
+- [x] 在 `note_builder_node` 调用
+- [x] LLM prompt 模板 `notes/prompts/flashcard_extract.zh.md`
+- [x] 每个 note 至少出 2 张卡
 
-### 📥 M5-08 · Flashcard 前端 + session
+### ✅ M5-08 · Flashcard 前端 + session
 **估时**：3 h
 **前置**：M5-07
 **出口**：
-- [ ] `frontend/app/flashcards/page.tsx` 卡片库
-- [ ] `frontend/app/flashcards/session/[solve_id]/page.tsx` 抽认卡 UI
-- [ ] 空格翻面、箭头切换 / 标会 / 标不会
-- [ ] session 结束统计
+- [x] `frontend/app/flashcards/page.tsx` 卡片库
+- [x] `frontend/app/flashcards/session/[solve_id]/page.tsx` 抽认卡 UI
+- [x] 空格翻面、箭头切换 / 标会 / 标不会
+- [x] session 结束统计
 
-### 📥 M5-09 · M5 出口验收
+### 🚧 M5-09 · M5 出口验收
 **估时**：30 min
 **前置**：M5-01..M5-08
 **出口**：
-- [ ] 拍齿轮图 → 算传动比走通
-- [ ] 拔网线后同请求返回降级提示
-- [ ] 错题本闭环
-- [ ] flashcard 自动生成 + session 可玩
-- [ ] commit `M5: vlm + mechanism + mistakes + flashcards`
+自动化已覆盖（绿）：
+- [x] 齿轮图 → 传动比闭环：`test_mechanism_vision_e2e::test_vision_gear_train_returns_correct_ratio`
+      （mock OCR/VLM/LLM，断言传动比 6）
+- [x] 离线降级不编造：`test_vision_gear_train_offline_degrades_without_fabricating`
+      （check_cloud_reachable→False，断言 fallback_reasons 含 vlm_offline + primary_skill_failed）
+- [x] 错题本闭环：`tests/api/routes` + `tests/storage/test_mistakes_repo.py`
+- [x] flashcard 自动生成：`tests/notes` flashcard 抽卡测试
+- [x] commit：已按卡分多次提交（见下方提交记录，非单条 `M5: ...`）
+
+仍需手测（真实环境，未打勾 = 未做）：
+- [ ] 真实拍齿轮图 + 云 VLM 现场验收（非 mock）
+- [ ] 真实拔网线后同请求返回降级提示
+- [ ] 浏览器里 flashcard session 实际可玩（翻面 / 标会 / 标不会 / 结束统计）
 
 ---
 

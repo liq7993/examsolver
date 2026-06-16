@@ -7,7 +7,7 @@ import sqlite3
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from examsolver.contracts import (
     Citation,
@@ -286,10 +286,18 @@ def _flashcards_from_json(value: Any) -> list[Flashcard]:
                 Flashcard(
                     front=str(item.get("front", "")),
                     back=str(item.get("back", "")),
-                    tag=str(item.get("tag", "")),
+                    card_type=_flashcard_type(item.get("card_type", item.get("tag"))),
                 )
             )
     return cards
+
+
+def _flashcard_type(value: Any) -> Literal["formula", "concept", "trap"]:
+    if value == "formula":
+        return "formula"
+    if value == "trap":
+        return "trap"
+    return "concept"
 
 
 def _snippet(question: str) -> str:

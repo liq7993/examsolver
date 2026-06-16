@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Protocol
+from typing import Any, Literal, Protocol
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,7 +47,13 @@ class Flashcard:
 
     front: str
     back: str
-    tag: str = ""
+    card_type: Literal["formula", "concept", "trap"] = "concept"
+
+    @property
+    def tag(self) -> str:
+        """Backward-compatible alias for older frontend code."""
+
+        return self.card_type
 
 
 @dataclass(frozen=True, slots=True)

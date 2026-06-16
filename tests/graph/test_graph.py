@@ -87,6 +87,7 @@ def test_note_builder_preserves_structured_steps() -> None:
     assert note.solve_id == "abc"
     assert note.steps == result.steps
     assert note.common_mistakes == []
+    assert note.flashcards == []
 
 
 def test_explanation_enhancer_node_skips_when_explanation_exists() -> None:

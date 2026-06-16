@@ -4,13 +4,18 @@ from __future__ import annotations
 
 import importlib
 import logging
+from pathlib import Path
 from dataclasses import replace
 
+from examsolver.contracts import NormalizedQuestion
 from examsolver.graph.router_agent import route_question
 from examsolver.graph.state import SolveGraphState
 from examsolver.llm.router import pick_llm
-from examsolver.multimodal import OCRError
+from examsolver.multimodal import OCRError, VLMError
+from examsolver.multimodal.fallback import check_cloud_reachable
 from examsolver.multimodal.ocr_paddle import recognize
+from examsolver.multimodal.vlm_claude import describe as describe_images
+from examsolver.notes.flashcard import generate_flashcards
 from examsolver.notes.note_builder import build_note
 from examsolver.pipeline.dispatcher import dispatch
 from examsolver.pipeline.formatter import format_response
@@ -90,22 +95,26 @@ def ocr_node(state: SolveGraphState) -> SolveGraphState:
 def router_agent_node(state: SolveGraphState) -> SolveGraphState:
     """Select a question type with regex first and an LLM fallback."""
 
-    normalized = state["normalized"]
+    normalized = _normalized_with_multimodal_context(state)
     decision = route_question(normalized)
     request_id = str(normalized.hints.get("request_id", "unknown"))
+    needs_vision = _needs_vision(normalized)
     _log_info(
         request_id,
         "router_agent_node",
-        "subject=%s question_type=%s confidence=%.2f",
+        "subject=%s question_type=%s confidence=%.2f needs_vision=%s",
         decision.subject,
         decision.question_type,
         decision.confidence,
+        needs_vision,
     )
     routed_state: SolveGraphState = {
+        "normalized": normalized,
         "subject": decision.subject,
         "question_type": decision.question_type,
         "routing_confidence": decision.confidence,
         "routing_reasoning": decision.reasoning,
+        "needs_vision": needs_vision,
     }
     if decision.fallback_reasons:
         routed_state["fallback_reasons"] = [
@@ -113,6 +122,54 @@ def router_agent_node(state: SolveGraphState) -> SolveGraphState:
             *decision.fallback_reasons,
         ]
     return routed_state
+
+
+def route_after_router_agent(state: SolveGraphState) -> str:
+    """Run VLM only for image requests that need visual understanding."""
+
+    return "vlm" if state.get("needs_vision") else route_after_router(state)
+
+
+def route_after_vlm(state: SolveGraphState) -> str:
+    """Continue along the original post-router branch after optional VLM."""
+
+    return route_after_router(state)
+
+
+def vlm_node(state: SolveGraphState) -> SolveGraphState:
+    """Generate an image description or honestly mark cloud vision unavailable."""
+
+    normalized = state["normalized"]
+    request_id = str(normalized.hints.get("request_id", "unknown"))
+    if not state.get("needs_vision"):
+        _log_info(request_id, "vlm_node", "skip needs_vision=false")
+        return {}
+
+    if not check_cloud_reachable():
+        _log_warning(request_id, "vlm_node", "fallback vlm_offline")
+        return {
+            "vision_description": "",
+            "normalized": replace(normalized, vision_description=""),
+            "fallback_reasons": [*state.get("fallback_reasons", []), "vlm_offline"],
+        }
+
+    _log_info(request_id, "vlm_node", "begin images=%s", len(normalized.image_paths))
+    try:
+        images = [_read_image_bytes(path) for path in normalized.image_paths]
+        description = describe_images(images, _vision_prompt(normalized))
+    except (OSError, VLMError) as exc:
+        _log_warning(request_id, "vlm_node", "fallback vlm_failed: %s", exc)
+        return {
+            "vision_description": "",
+            "normalized": replace(normalized, vision_description=""),
+            "fallback_reasons": [*state.get("fallback_reasons", []), "vlm_failed"],
+        }
+
+    _log_info(request_id, "vlm_node", "done chars=%s", len(description))
+    return {
+        "vision_description": description,
+        "normalized": replace(normalized, vision_description=description),
+    }
 
 
 def route_after_router(state: SolveGraphState) -> str:
@@ -230,6 +287,12 @@ def note_builder_node(state: SolveGraphState) -> SolveGraphState:
         build_note(state["solve_result"], normalized),
         subject=state.get("subject", normalized.subject),
     )
+    try:
+        flashcards = generate_flashcards(note, llm=pick_llm("synthesize", needs_vision=False))
+    except Exception as exc:
+        _log_warning(request_id, "note_builder_node", "flashcards skipped: %s", exc)
+        flashcards = []
+    note = replace(note, flashcards=flashcards)
     _log_info(request_id, "note_builder_node", "done title=%s", note.title)
     return {"note": note}
 
@@ -297,3 +360,34 @@ def _skill_needs_rag(subject: str | None, question_type: str | None) -> bool:
         return False
     skill = get_skill(subject, question_type)
     return bool(getattr(skill, "needs_rag", False))
+
+
+def _normalized_with_multimodal_context(state: SolveGraphState) -> NormalizedQuestion:
+    normalized = state["normalized"]
+    return replace(
+        normalized,
+        ocr_text=state.get("ocr_text", normalized.ocr_text),
+        vision_description=state.get("vision_description", normalized.vision_description),
+    )
+
+
+def _needs_vision(normalized: NormalizedQuestion) -> bool:
+    if not normalized.image_paths:
+        return False
+    text = normalized.normalized_text
+    has_visual_keyword = any(keyword in text for keyword in ("图", "机构", "画", "所示"))
+    has_short_ocr = len(normalized.ocr_text.strip()) < 20
+    return has_visual_keyword or has_short_ocr
+
+
+def _read_image_bytes(path: str) -> bytes:
+    return Path(path).read_bytes()
+
+
+def _vision_prompt(normalized: NormalizedQuestion) -> str:
+    return (
+        "请描述图片中可直接看见的题面、机构、齿轮、齿数、标注和几何关系。"
+        "不要解题，不要推导答案，不要补全看不清的信息。\n"
+        f"题目文字：{normalized.normalized_text}\n"
+        f"OCR文字：{normalized.ocr_text or '无'}"
+    )

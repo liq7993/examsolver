@@ -21,9 +21,11 @@ from examsolver.graph.nodes import (
     persist_node,
     rag_retrieve_node,
     route_after_rag,
-    route_after_router,
+    route_after_router_agent,
+    route_after_vlm,
     router_agent_node,
     skill_node,
+    vlm_node,
 )
 from examsolver.graph.state import SolveGraphState
 from examsolver.pipeline.formatter import format_response
@@ -42,6 +44,7 @@ def build_graph() -> CompiledStateGraph[Any, Any, Any, Any]:
     graph = StateGraph(SolveGraphState)
     graph.add_node("normalize", normalize_node)
     graph.add_node("ocr", ocr_node)
+    graph.add_node("vlm", vlm_node)
     graph.add_node("router_agent", router_agent_node)
     graph.add_node("rag_retrieve", rag_retrieve_node)
     graph.add_node("skill", skill_node)
@@ -60,7 +63,12 @@ def build_graph() -> CompiledStateGraph[Any, Any, Any, Any]:
     graph.add_edge("ocr", "router_agent")
     graph.add_conditional_edges(
         "router_agent",
-        route_after_router,
+        route_after_router_agent,
+        {"vlm": "vlm", "rag_retrieve": "rag_retrieve", "skill": "skill", "general": "general"},
+    )
+    graph.add_conditional_edges(
+        "vlm",
+        route_after_vlm,
         {"rag_retrieve": "rag_retrieve", "skill": "skill", "general": "general"},
     )
     graph.add_conditional_edges(

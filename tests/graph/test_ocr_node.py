@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from examsolver.contracts import NormalizedQuestion
-from examsolver.graph.nodes import has_images, ocr_node
+from examsolver.graph.nodes import has_images, ocr_node, route_after_router_agent, vlm_node
 from examsolver.multimodal import OCRError
 from examsolver.multimodal.ocr_paddle import OCRResult
 
@@ -63,6 +65,60 @@ def test_ocr_node_appends_fallback_reason_when_ocr_fails(
     assert state["fallback_reasons"] == ["previous", "ocr_failed:sample failure"]
     assert "ocr_text" not in state
     assert "ocr_bboxes" not in state
+
+
+def test_router_path_requests_vision_for_short_ocr_with_image() -> None:
+    normalized = _normalized(image_paths=["diagram.png"])
+
+    assert route_after_router_agent({"normalized": normalized, "needs_vision": True}) == "vlm"
+
+
+def test_vlm_node_marks_offline_without_calling_cloud(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    normalized = _normalized(image_paths=["diagram.png"])
+    monkeypatch.setattr("examsolver.graph.nodes.check_cloud_reachable", lambda: False)
+    monkeypatch.setattr(
+        "examsolver.graph.nodes.describe_images",
+        lambda _images, _prompt: (_ for _ in ()).throw(AssertionError("should not call VLM")),
+    )
+
+    state = vlm_node(
+        {
+            "normalized": normalized,
+            "needs_vision": True,
+            "fallback_reasons": ["previous"],
+        }
+    )
+
+    assert state["vision_description"] == ""
+    assert state["normalized"].vision_description == ""
+    assert state["fallback_reasons"] == ["previous", "vlm_offline"]
+
+
+def test_vlm_node_reads_images_and_writes_description(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    image_path = tmp_path / "gear.png"
+    image_path.write_bytes(b"\x89PNG\r\n")
+    normalized = _normalized(image_paths=[str(image_path)])
+    calls: list[tuple[list[bytes], str]] = []
+
+    monkeypatch.setattr("examsolver.graph.nodes.check_cloud_reachable", lambda: True)
+
+    def fake_describe(images: list[bytes], prompt: str) -> str:
+        calls.append((images, prompt))
+        return "图中为单级齿轮传动，z1=18，z2=54。"
+
+    monkeypatch.setattr("examsolver.graph.nodes.describe_images", fake_describe)
+
+    state = vlm_node({"normalized": normalized, "needs_vision": True})
+
+    assert calls[0][0] == [b"\x89PNG\r\n"]
+    assert "不要解题" in calls[0][1]
+    assert state["vision_description"] == "图中为单级齿轮传动，z1=18，z2=54。"
+    assert state["normalized"].vision_description == "图中为单级齿轮传动，z1=18，z2=54。"
 
 
 def _normalized(*, image_paths: list[str]) -> NormalizedQuestion:

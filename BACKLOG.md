@@ -410,13 +410,13 @@
 
 ## M5 · VLM + 机械原理 + 错题本 + 卡片
 
-### 📥 M5-01 · VLM Claude client
+### ✅ M5-01 · VLM Claude client
 **估时**：2 h
 **前置**：M4-08
 **出口**：
-- [ ] `multimodal/vlm_claude.py`：Claude Sonnet 4.6 多模态
-- [ ] 输入 image bytes + prompt，输出 str
-- [ ] 单测用 mock
+- [x] `multimodal/vlm_claude.py`：Claude Sonnet 4.6 多模态
+- [x] 输入 image bytes + prompt，输出 str
+- [x] 单测用 mock
 
 ### 📥 M5-02 · 离线降级检测
 **估时**：1 h

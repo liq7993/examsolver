@@ -1,0 +1,66 @@
+[
+  {
+    "id": "gt-001-two-stage-text",
+    "question": "两级齿轮传动 z1=20 z2=40 z3=15 z4=60，求传动比。",
+    "vision": "",
+    "llm_response": {
+      "stages": [
+        {"driving_teeth": 20, "driven_teeth": 40},
+        {"driving_teeth": 15, "driven_teeth": 60}
+      ]
+    },
+    "expected_ratio": 8.0,
+    "expected_answer_contains": "8"
+  },
+  {
+    "id": "gt-002-single-stage-text",
+    "question": "单级齿轮传动，主动轮 z1=18，从动轮 z2=54，传动比是多少？",
+    "vision": "",
+    "llm_response": {
+      "stages": [
+        {"driving_teeth": 18, "driven_teeth": 54}
+      ]
+    },
+    "expected_ratio": 3.0,
+    "expected_answer_contains": "3"
+  },
+  {
+    "id": "gt-003-vision-two-stage",
+    "question": "图中机构的传动比是多少？",
+    "vision": "图中为两级齿轮传动，第一对齿轮标注 z1=24、z2=72，第二对标注 z3=20、z4=40。",
+    "llm_response": {
+      "stages": [
+        {"driving_teeth": 24, "driven_teeth": 72},
+        {"driving_teeth": 20, "driven_teeth": 40}
+      ]
+    },
+    "expected_ratio": 6.0,
+    "expected_answer_contains": "6"
+  },
+  {
+    "id": "gt-004-fractional-ratio",
+    "question": "齿轮 z1=30 带动 z2=45，再由 z3=25 带动 z4=50，求总传动比。",
+    "vision": "",
+    "llm_response": {
+      "stages": [
+        {"driving_teeth": 30, "driven_teeth": 45},
+        {"driving_teeth": 25, "driven_teeth": 50}
+      ]
+    },
+    "expected_ratio": 3.0,
+    "expected_answer_contains": "3"
+  },
+  {
+    "id": "gt-005-ocr-context",
+    "question": "所示齿轮机构传动比？",
+    "ocr": "z1=16 z2=48",
+    "vision": "图片显示单级齿轮传动，主动轮 z1=16，从动轮 z2=48。",
+    "llm_response": {
+      "stages": [
+        {"driving_teeth": 16, "driven_teeth": 48}
+      ]
+    },
+    "expected_ratio": 3.0,
+    "expected_answer_contains": "3"
+  }
+]

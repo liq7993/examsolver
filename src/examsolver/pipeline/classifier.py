@@ -20,6 +20,7 @@ def classify(question: NormalizedQuestion) -> str:
         ("matrix_mul", _looks_like_matrix_multiplication),
         ("force_balance", _looks_like_force_balance),
         ("fit_type", _looks_like_fit_type),
+        ("gear_train", _looks_like_gear_train),
     ]
     for question_type, predicate in rules:
         if predicate(text):
@@ -64,6 +65,12 @@ def _looks_like_fit_type(text: str) -> bool:
     asks_hole_shaft_symbol = "孔" in text and "轴" in text and "代号" in text
     has_symbol = re.search(r"\b[A-Za-z]\s*\d{1,2}\b", text) is not None
     return has_fit_pair or (has_tolerance_word and has_symbol) or asks_hole_shaft_symbol
+
+
+def _looks_like_gear_train(text: str) -> bool:
+    has_gear_word = any(keyword in text for keyword in ("齿轮", "gear"))
+    has_ratio_intent = any(keyword in text for keyword in ("传动比", "齿数", "ratio", "z1", "z2"))
+    return has_gear_word and has_ratio_intent
 
 
 def _without_latex_noise(text: str) -> str:

@@ -8,6 +8,7 @@ from collections.abc import Sequence
 from typing import Any, cast
 
 from examsolver.contracts import NormalizedQuestion, SolveResult
+from examsolver.llm.router import pick_llm
 from examsolver.rag.retriever import TextbookChunk
 from examsolver.skills.base import SkillExecutionError
 from examsolver.skills.registry import find_skill_for, unknown_skill
@@ -25,10 +26,13 @@ def dispatch(
 
     skill = find_skill_for(question, question_type)
     try:
-        if rag_chunks is not None and "rag_chunks" in inspect.signature(skill.solve).parameters:
-            result = cast(SolveResult, cast(Any, skill).solve(question, rag_chunks=list(rag_chunks)))
-        else:
-            result = skill.solve(question)
+        signature = inspect.signature(skill.solve)
+        kwargs: dict[str, Any] = {}
+        if rag_chunks is not None and "rag_chunks" in signature.parameters:
+            kwargs["rag_chunks"] = list(rag_chunks)
+        if "llm" in signature.parameters and bool(getattr(skill, "requires_llm", False)):
+            kwargs["llm"] = pick_llm("extract_simple", needs_vision=bool(getattr(skill, "needs_vision", False)))
+        result = cast(SolveResult, cast(Any, skill).solve(question, **kwargs))
     except Exception as exc:
         request_id = str(question.hints.get("request_id", "unknown"))
         logger.warning("[%s] skill failed; falling back to unknown: %s", request_id, exc)

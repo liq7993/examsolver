@@ -29,6 +29,7 @@ def test_derivative_skill_solves_trig_via_sympy() -> None:
     question = normalize(SolveRequest(question="求 sin(x) 对 x 的导数"))
     result = DerivativeSkill().solve(question)
 
+    assert isinstance(result.answer, str)
     assert "\\cos" in result.answer
     assert result.answer == (
         "$\\frac{d}{dx}\\left(\\sin{\\left(x \\right)}\\right) = \\cos{\\left(x \\right)}$"
@@ -40,6 +41,7 @@ def test_derivative_skill_applies_product_rule() -> None:
     result = DerivativeSkill().solve(question)
 
     # d/dx[x*sin(x)] = x*cos(x) + sin(x)
+    assert isinstance(result.answer, str)
     assert "\\cos" in result.answer
     assert "\\sin" in result.answer
 

@@ -22,7 +22,9 @@ def test_health_route() -> None:
 def test_local_dev_cors_allows_non_default_frontend_port() -> None:
     app = create_app()
     cors_middleware = next(
-        middleware for middleware in app.user_middleware if middleware.cls is CORSMiddleware
+        middleware
+        for middleware in app.user_middleware
+        if getattr(middleware, "cls", None) is CORSMiddleware
     )
 
     assert cors_middleware.kwargs["allow_origin_regex"] == (

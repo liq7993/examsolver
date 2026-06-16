@@ -1,4 +1,4 @@
-import type { Capabilities, HistoryPage, SolveResponse } from "./types";
+import type { Capabilities, HistoryPage, MistakeEntry, SolveResponse } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://127.0.0.1:8000";
 const BACKEND_UNAVAILABLE_MESSAGE = "后端未连接，请启动 uvicorn";
@@ -65,6 +65,41 @@ export async function getHistory(limit = 50, offset = 0): Promise<HistoryPage> {
 
 export async function getCapabilities(): Promise<Capabilities> {
   return requestJson<Capabilities>("/solve/capabilities");
+}
+
+export async function addMistake(solveId: string, userNote?: string): Promise<MistakeEntry> {
+  return requestJson<MistakeEntry>("/mistakes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      solve_id: solveId,
+      user_note: userNote || undefined,
+    }),
+  });
+}
+
+export async function getMistakes(subject?: string): Promise<MistakeEntry[]> {
+  const query = subject ? `?${new URLSearchParams({ subject }).toString()}` : "";
+  return requestJson<MistakeEntry[]>(`/mistakes${query}`);
+}
+
+export async function updateMistakeNote(id: string, userNote: string): Promise<MistakeEntry> {
+  return requestJson<MistakeEntry>(`/mistakes/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_note: userNote }),
+  });
+}
+
+export async function deleteMistake(id: string): Promise<void> {
+  await requestJson<{ deleted: boolean }>(`/mistakes/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+}
+
+export function getMistakesExportUrl(subject?: string): string {
+  const query = subject ? `?${new URLSearchParams({ subject }).toString()}` : "";
+  return `${API_BASE}/mistakes/export.md${query}`;
 }
 
 function normalizeSolveResponse(response: HttpSolveResponse): SolveResponse {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ApiError, getDocxExportUrl, getSolve } from "../../../lib/api";
+import { ApiError, addMistake, getDocxExportUrl, getSolve } from "../../../lib/api";
 import type { FormulaCard, NoteEntry, SolveResponse, Step } from "../../../lib/types";
 import { MathText } from "../../components/MathText";
 import styles from "./note.module.css";
@@ -109,7 +109,12 @@ function ReadyNote({ response }: { response: SolveResponse }) {
   const commonMistakes = normalizeCommonMistakes(note, response);
 
   return (
-    <NoteScaffold title={title} solveId={response.solve_id} subject={subjectLabel}>
+    <NoteScaffold
+      title={title}
+      solveId={response.solve_id}
+      subject={subjectLabel}
+      flashcardCount={note?.flashcards.length ?? 0}
+    >
       <article className={styles.noteLayout}>
         <div className={styles.noteMain}>
           {fallbackReasons.length > 0 ? (
@@ -187,13 +192,27 @@ function NoteScaffold({
   title,
   solveId,
   subject,
+  flashcardCount = 0,
   children,
 }: {
   title: string;
   solveId: string;
   subject?: string;
+  flashcardCount?: number;
   children?: React.ReactNode;
 }) {
+  const [mistakeState, setMistakeState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
+  async function handleAddMistake() {
+    setMistakeState("saving");
+    try {
+      await addMistake(solveId);
+      setMistakeState("saved");
+    } catch {
+      setMistakeState("error");
+    }
+  }
+
   return (
     <main className={styles.page}>
       <header className={styles.toolbar}>
@@ -205,9 +224,21 @@ function NoteScaffold({
           <span className={styles.solveId}>{solveId}</span>
         </div>
         <div className={styles.toolbarRight}>
-          <button className={styles.toolButton} type="button" disabled title="M5-06 接入错题本">
-            + 错题
+          <button
+            className={styles.toolButton}
+            type="button"
+            disabled={mistakeState === "saving" || mistakeState === "saved"}
+            title={mistakeState === "error" ? "加入失败，请稍后重试" : "加入错题本"}
+            onClick={() => void handleAddMistake()}
+          >
+            {mistakeState === "saving" ? "加入中" : mistakeState === "saved" ? "已加入" : "+ 错题"}
           </button>
+          <Link className={styles.toolButton} href="/mistakes">
+            错题本
+          </Link>
+          <Link className={styles.toolButton} href={`/flashcards/session/${encodeURIComponent(solveId)}`}>
+            练卡片{flashcardCount ? ` ${flashcardCount}` : ""}
+          </Link>
           <a
             className={styles.toolButton}
             href={getDocxExportUrl(solveId)}

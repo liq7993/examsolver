@@ -23,7 +23,7 @@ export type FormulaCard = {
 export type Flashcard = {
   front: string;
   back: string;
-  tag: string;
+  card_type: "formula" | "concept" | "trap";
 };
 
 export type StudentExplanation = {
@@ -99,4 +99,15 @@ export type SkillCapability = {
 export type Capabilities = {
   subjects: SubjectCapability[];
   skills: SkillCapability[];
+};
+
+export type MistakeEntry = {
+  id: string;
+  solve_id: string;
+  subject: string;
+  question_type: string;
+  user_note: string | null;
+  review_count: number;
+  last_review: string | null;
+  created_at: string;
 };

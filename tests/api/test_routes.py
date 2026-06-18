@@ -216,10 +216,6 @@ def test_frontend_static_shell_is_served() -> None:
     assert "solveQuestion" in script
     assert "renderLatex" in script
     assert "renderMathText" in script
-    assert "refreshLlmStatus" in script
-    assert "/llm/status" in script
-    assert "Gemma: 已连接" in script
-    assert "Gemma: 未连接" in script
     assert "window.katex" in script
     assert "编辑 LaTeX" in script
     assert "data-copy-formula" in script

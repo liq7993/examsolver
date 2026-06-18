@@ -331,7 +331,7 @@ async function markdownArtifact(page) {
 
 function resizeComposer() {
   els.input.style.height = "auto";
-  els.input.style.height = `${Math.min(els.input.scrollHeight, 180)}px`;
+  els.input.style.height = `${Math.min(Math.max(els.input.scrollHeight, 52), 200)}px`;
 }
 
 function currentPage() {
@@ -534,34 +534,6 @@ async function refreshCapabilities() {
       : '<p class="muted">暂无能力</p>';
   } catch {
     els.capabilities.innerHTML = '<p class="muted">能力目录不可用</p>';
-  }
-
-  refreshLlmStatus();
-}
-
-async function refreshLlmStatus() {
-  try {
-    const response = await fetch("/llm/status", { cache: "no-store" });
-    const status = await response.json();
-    const chip = document.createElement("span");
-    chip.className = `capability-chip ${status.server_reachable ? "capability-chip-active" : ""}`;
-    if (status.server_reachable) {
-      chip.title = `${status.provider} · ${status.base_url} · ${status.server_model_count || 0} model(s)`;
-      chip.textContent = `Gemma: 已连接`;
-    } else if (status.enabled) {
-      chip.classList.add("capability-chip-warning");
-      chip.title = status.server_error || "Gemma 服务未连接";
-      chip.textContent = "Gemma: 未连接";
-    } else {
-      chip.title = "设置 EXAMSOLVER_LLM_PROVIDER=local_gguf 后启用";
-      chip.textContent = "Gemma: 未启用";
-    }
-    els.capabilities.append(chip);
-  } catch {
-    const chip = document.createElement("span");
-    chip.className = "capability-chip";
-    chip.textContent = "Gemma: 状态未知";
-    els.capabilities.append(chip);
   }
 }
 

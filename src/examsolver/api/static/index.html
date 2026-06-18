@@ -42,7 +42,43 @@
           </div>
 
           <div id="empty-page" class="empty-page">
-            <p>输入题目开始生成解题笔记。</p>
+            <div class="hero">
+              <p class="hero-eyebrow">EXAMSOLVER</p>
+              <h2 class="hero-title">输入一道题，<br />生成可复用的解题笔记</h2>
+              <p class="hero-sub">
+                支持求导、矩阵乘法、受力平衡、齿轮传动等；公式自动渲染，结果可一键导出 Markdown。
+              </p>
+              <div class="hero-examples" aria-label="样例题目">
+                <button type="button" class="hero-card" data-example="求 x^2 对 x 的导数">
+                  <span class="hero-card-tag">微积分</span>
+                  <strong>求 x² 对 x 的导数</strong>
+                </button>
+                <button
+                  type="button"
+                  class="hero-card"
+                  data-example="计算矩阵 [[1,2],[3,4]] 乘 [[5,6],[7,8]]"
+                >
+                  <span class="hero-card-tag">线性代数</span>
+                  <strong>2×2 矩阵相乘</strong>
+                </button>
+                <button
+                  type="button"
+                  class="hero-card"
+                  data-example="一个 10 N 的力向右作用，求它的平衡力。"
+                >
+                  <span class="hero-card-tag">工程力学</span>
+                  <strong>求平衡力</strong>
+                </button>
+                <button
+                  type="button"
+                  class="hero-card"
+                  data-example="一对齿轮 z1=24, z2=72，求传动比"
+                >
+                  <span class="hero-card-tag">机械原理</span>
+                  <strong>齿轮传动比</strong>
+                </button>
+              </div>
+            </div>
           </div>
 
           <div id="note-stack" class="note-stack" hidden>
@@ -110,7 +146,7 @@
                 name="question"
                 rows="1"
                 autocomplete="off"
-                placeholder="输入当前支持的受力平衡题，Enter 提交，Shift + Enter 换行"
+                placeholder="输入题目，Enter 提交 · Shift + Enter 换行"
               ></textarea>
               <button id="submit-button" class="primary-button" type="submit">↑</button>
             </div>

@@ -169,31 +169,6 @@ button {
   font-size: 0.72rem;
 }
 
-.capability-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-}
-
-.capability-chip {
-  padding: 6px 9px;
-  border-radius: 9999px;
-  background: var(--surface-3);
-  color: var(--text-1);
-  font-size: 0.76rem;
-  line-height: 1;
-}
-
-.capability-chip-active {
-  background: var(--accent-tint-2);
-  color: var(--accent-2);
-}
-
-.capability-chip-warning {
-  background: rgba(180, 35, 24, 0.08);
-  color: var(--danger);
-}
-
 .workspace {
   min-width: 0;
   height: 100vh;

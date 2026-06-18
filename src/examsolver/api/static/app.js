@@ -36,7 +36,6 @@ const els = {
   explanationPanel: document.querySelector("#explanation-panel"),
   explanationGrid: document.querySelector("#explanation-grid"),
   history: document.querySelector("#history-list"),
-  capabilities: document.querySelector("#capability-list"),
   newThread: document.querySelector("#new-thread"),
 };
 
@@ -524,19 +523,6 @@ async function refreshHistory() {
   }
 }
 
-async function refreshCapabilities() {
-  try {
-    const response = await fetch("/solve/capabilities", { cache: "no-store" });
-    const payload = await response.json();
-    const skills = Array.isArray(payload.skills) ? payload.skills : [];
-    els.capabilities.innerHTML = skills.length
-      ? skills.map((skill) => `<span class="capability-chip">${escapeHtml(skill.name)}</span>`).join("")
-      : '<p class="muted">暂无能力</p>';
-  } catch {
-    els.capabilities.innerHTML = '<p class="muted">能力目录不可用</p>';
-  }
-}
-
 async function loadSolve(solveId, questionSnippet = "历史解答") {
   if (!solveId || state.busy) return;
   try {
@@ -688,12 +674,10 @@ els.newThread.addEventListener("click", () => {
   state.activeStepIndex = 0;
   els.input.value = "";
   resizeComposer();
-  els.empty.innerHTML = "<p>输入题目开始生成解题笔记。</p>";
   renderCurrentPage();
   els.input.focus();
 });
 
 renderCurrentPage();
 resizeComposer();
-refreshCapabilities();
 refreshHistory();

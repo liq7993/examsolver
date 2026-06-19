@@ -39,38 +39,8 @@
               <p class="hero-eyebrow">EXAMSOLVER</p>
               <h2 class="hero-title">输入一道题，<br />生成可复用的解题笔记</h2>
               <p class="hero-sub">
-                支持求导、矩阵乘法、受力平衡、齿轮传动等；公式自动渲染，结果可一键导出 Markdown。
+                支持求导、矩阵乘法、受力平衡、齿轮传动、公差配合等；公式自动渲染，结果可导出 Markdown 与 PDF。
               </p>
-              <div class="hero-examples" aria-label="样例题目">
-                <button type="button" class="hero-card" data-example="求 x^2 对 x 的导数">
-                  <span class="hero-card-tag">微积分</span>
-                  <strong>求 x² 对 x 的导数</strong>
-                </button>
-                <button
-                  type="button"
-                  class="hero-card"
-                  data-example="计算矩阵 [[1,2],[3,4]] 乘 [[5,6],[7,8]]"
-                >
-                  <span class="hero-card-tag">线性代数</span>
-                  <strong>2×2 矩阵相乘</strong>
-                </button>
-                <button
-                  type="button"
-                  class="hero-card"
-                  data-example="一个 10 N 的力向右作用，求它的平衡力。"
-                >
-                  <span class="hero-card-tag">工程力学</span>
-                  <strong>求平衡力</strong>
-                </button>
-                <button
-                  type="button"
-                  class="hero-card"
-                  data-example="一对齿轮 z1=24, z2=72，求传动比"
-                >
-                  <span class="hero-card-tag">机械原理</span>
-                  <strong>齿轮传动比</strong>
-                </button>
-              </div>
             </div>
           </div>
 
@@ -94,6 +64,7 @@
               <button id="copy-answer" type="button">复制答案</button>
               <button id="copy-note" type="button">复制笔记</button>
               <button id="download-note" type="button">下载 Markdown</button>
+              <button id="export-pdf" type="button">导出 PDF</button>
               <span id="tool-feedback" aria-live="polite"></span>
             </section>
 
@@ -142,18 +113,6 @@
                 placeholder="输入题目，Enter 提交 · Shift + Enter 换行"
               ></textarea>
               <button id="submit-button" class="primary-button" type="submit">↑</button>
-            </div>
-            <div class="example-row" aria-label="样例题目">
-              <button type="button" data-example="一个 10 N 的力向右作用，求它的平衡力。">
-                平衡力
-              </button>
-              <button type="button" data-example="将 20 N、与 x 轴成 30 度的力分解为 x、y 分量。">
-                分力
-              </button>
-              <button type="button" data-example="求 x^2 对 x 的导数">求导</button>
-              <button type="button" data-example="计算矩阵 [[1,2],[3,4]] 乘 [[5,6],[7,8]]">
-                矩阵
-              </button>
             </div>
           </div>
         </form>

@@ -25,6 +25,7 @@ const els = {
   copyAnswer: document.querySelector("#copy-answer"),
   copyNote: document.querySelector("#copy-note"),
   downloadNote: document.querySelector("#download-note"),
+  exportPdf: document.querySelector("#export-pdf"),
   toolFeedback: document.querySelector("#tool-feedback"),
   answerSkill: document.querySelector("#answer-skill"),
   answerText: document.querySelector("#answer-text"),
@@ -44,12 +45,18 @@ const labels = {
     mechanics: "工程力学",
     calculus: "微积分",
     linear_algebra: "线性代数",
+    mechanism: "机械原理",
+    tolerance: "公差配合",
+    general: "通用",
     unknown: "未识别",
   },
   type: {
     force_balance: "受力平衡",
     derivative: "求导",
     matrix_mul: "矩阵乘法",
+    gear_train: "齿轮传动",
+    fit_type: "配合类型",
+    general: "通用解答",
     unknown: "未识别",
   },
 };
@@ -650,12 +657,21 @@ els.downloadNote.addEventListener("click", async () => {
   showToolFeedback("Markdown 已生成");
 });
 
-document.querySelectorAll("[data-example]").forEach((button) => {
-  button.addEventListener("click", () => {
-    els.input.value = button.getAttribute("data-example") || "";
-    resizeComposer();
-    els.input.focus();
-  });
+els.exportPdf.addEventListener("click", () => {
+  const page = currentPage();
+  if (!page) return;
+  const solveId = page.solve.solve_id;
+  if (!solveId) {
+    showToolFeedback("无法导出 PDF：缺少 solve_id");
+    return;
+  }
+  const link = document.createElement("a");
+  link.href = `/solve/${encodeURIComponent(solveId)}/export.pdf`;
+  link.rel = "noopener";
+  document.body.append(link);
+  link.click();
+  link.remove();
+  showToolFeedback("PDF 生成中…");
 });
 
 els.history.addEventListener("click", (event) => {

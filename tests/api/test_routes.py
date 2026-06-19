@@ -7,7 +7,7 @@ from starlette.responses import Response
 
 from examsolver.api.app import STATIC_DIR, create_app
 from examsolver.api.routes.capabilities import capabilities
-from examsolver.api.routes.export import export_docx, export_markdown
+from examsolver.api.routes.export import export_docx, export_markdown, export_pdf
 from examsolver.api.routes.health import health, info, ready
 from examsolver.api.routes.llm import local_llm_status
 from examsolver.api.routes.solve import get_solve, solve_history, solve_question
@@ -182,6 +182,26 @@ def test_export_docx_route_raises_404_for_missing_id() -> None:
         raise AssertionError("expected HTTPException")
 
 
+def test_export_pdf_route_returns_print_quality_pdf() -> None:
+    solved = solve_question(SolveRequestBody(question="求 x^2 对 x 的导数"))
+
+    response = export_pdf(solved.solve_id)
+
+    assert response.media_type == "application/pdf"
+    assert bytes(response.body).startswith(b"%PDF-")
+    assert "filename*=UTF-8''" in response.headers["Content-Disposition"]
+    assert ".pdf" in response.headers["Content-Disposition"]
+
+
+def test_export_pdf_route_raises_404_for_missing_id() -> None:
+    try:
+        export_pdf("missing")
+    except HTTPException as exc:
+        assert exc.status_code == 404
+    else:
+        raise AssertionError("expected HTTPException")
+
+
 def test_get_solve_raises_404_for_missing_id() -> None:
     try:
         get_solve("missing")
@@ -213,6 +233,7 @@ def test_frontend_static_shell_is_served() -> None:
     assert "result-status" in html
     assert "page-tools" in html
     assert "下载 Markdown" in html
+    assert "导出 PDF" in html
     assert "solveQuestion" in script
     assert "renderLatex" in script
     assert "renderMathText" in script
@@ -223,5 +244,6 @@ def test_frontend_static_shell_is_served() -> None:
     assert "noteMarkdown" in script
     assert "markdownArtifact" in script
     assert "/export.md" in script
+    assert "/export.pdf" in script
     assert "downloadText" in script
     assert "resizeComposer" in script

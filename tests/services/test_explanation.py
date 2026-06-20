@@ -1,6 +1,12 @@
+import json
+
+import httpx
+import respx
+
 from examsolver.contracts import NormalizedQuestion, SolveResult, Step, StudentExplanation
 from examsolver.config import LLMConfig
 from examsolver.services.explanation import (
+    LocalOpenAIExplanationEnhancer,
     NullExplanationEnhancer,
     enhance_if_needed,
     probe_local_llm,
@@ -141,3 +147,56 @@ def test_probe_local_llm_disabled_is_fast_non_reachable() -> None:
     assert status["server_reachable"] is False
     assert status["server_model_count"] is None
     assert status["server_error"] == "local LLM is disabled"
+
+
+@respx.mock
+def test_local_enhancer_uses_openai_compatible_client_and_parses_json() -> None:
+    config = LLMConfig(
+        provider="local_gguf",
+        base_url="http://llama.test/v1",
+        model="gemma-test",
+        model_path=None,
+        timeout_seconds=5,
+        max_tokens=256,
+        temperature=0.2,
+    )
+    content = json.dumps(
+        {
+            "summary": "导数是斜率",
+            "intuition": "看变化率",
+            "step_by_step": ["对每一项求导"],
+            "common_mistake": "忘记链式法则",
+            "self_check_question": "结果对吗？",
+        },
+        ensure_ascii=False,
+    )
+    route = respx.post("http://llama.test/v1/chat/completions").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "choices": [{"message": {"content": content}}],
+                "usage": {"prompt_tokens": 5, "completion_tokens": 5},
+            },
+        )
+    )
+    enhancer = LocalOpenAIExplanationEnhancer(config)
+    question = NormalizedQuestion(raw_text="求导", normalized_text="求导", subject="calculus")
+    result = SolveResult(
+        question_type="derivative",
+        skill="calculus.derivative",
+        steps=[Step(index=1, description="对每一项求导")],
+        answer="2x",
+        meta={"success": True},
+    )
+
+    explanation = enhancer.enhance(question, result)
+
+    assert explanation is not None
+    assert explanation.summary == "导数是斜率"
+    assert explanation.step_by_step == ["对每一项求导"]
+    payload = json.loads(route.calls.last.request.content)
+    assert payload["model"] == "gemma-test"
+    assert payload["stream"] is False
+    assert payload["max_tokens"] == 256
+    assert [message["role"] for message in payload["messages"]] == ["system", "user"]
+    assert "authorization" not in route.calls.last.request.headers

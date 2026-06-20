@@ -8,6 +8,8 @@ from dataclasses import replace
 from typing import Any
 from urllib import error, request
 
+import httpx
+
 from examsolver.config import LLMConfig, load_llm_config
 from examsolver.contracts import (
     ExplanationEnhancer,
@@ -16,6 +18,7 @@ from examsolver.contracts import (
     Step,
     StudentExplanation,
 )
+from examsolver.llm import Message, OpenAICompatibleClient
 
 logger = logging.getLogger(__name__)
 
@@ -36,64 +39,57 @@ class NullExplanationEnhancer:
         return None
 
 
+_EXPLANATION_SYSTEM_PROMPT = (
+    "Return JSON only. No markdown fences. Chinese. "
+    "Keys: summary, intuition, step_by_step, common_mistake, "
+    "self_check_question. Each string <= 40 Chinese chars. "
+    "step_by_step has at most 2 items. Do not change solver facts."
+)
+
+
 class LocalOpenAIExplanationEnhancer:
-    """OpenAI-compatible local LLM enhancer, intended for llama-server."""
+    """Student-explanation enhancer backed by a local OpenAI-compatible LLM.
+
+    Delegates the chat-completions call to the shared
+    :class:`~examsolver.llm.openai_compatible.OpenAICompatibleClient` instead of
+    hand-rolling an HTTP request, so payload shape, retry policy, and logging
+    match the rest of the LLM layer. The injected client runs with
+    ``trust_env=False`` to preserve the original no-proxy behaviour against a
+    local llama-server.
+    """
 
     name = "local_gguf.gemma4"
     version = "0.1.0"
 
-    def __init__(self, config: LLMConfig) -> None:
+    def __init__(
+        self,
+        config: LLMConfig,
+        client: OpenAICompatibleClient | None = None,
+    ) -> None:
         self._config = config
+        self._client = client or OpenAICompatibleClient(
+            base_url=config.base_url,
+            model=config.model,
+            task_kind="explain",
+            provider_label="local_gguf",
+            client=httpx.Client(trust_env=False),
+        )
 
     def enhance(
         self,
         question: NormalizedQuestion,
         result: SolveResult,
     ) -> StudentExplanation | None:
-        payload = {
-            "model": self._config.model,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": (
-                        "Return JSON only. No markdown fences. Chinese. "
-                        "Keys: summary, intuition, step_by_step, common_mistake, "
-                        "self_check_question. Each string <= 40 Chinese chars. "
-                        "step_by_step has at most 2 items. Do not change solver facts."
-                    ),
-                },
-                {"role": "user", "content": _prompt(question, result)},
+        content = self._client.chat(
+            [
+                Message(role="system", content=_EXPLANATION_SYSTEM_PROMPT),
+                Message(role="user", content=_prompt(question, result)),
             ],
-            "temperature": self._config.temperature,
-            "max_tokens": self._config.max_tokens,
-            "stream": False,
-        }
-        content = self._post_chat_completion(payload)
-        return _student_explanation_from_text(content)
-
-    def _post_chat_completion(self, payload: dict[str, Any]) -> str:
-        url = self._config.base_url.rstrip("/") + "/chat/completions"
-        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        http_request = request.Request(
-            url,
-            data=body,
-            headers={"Content-Type": "application/json"},
-            method="POST",
+            max_tokens=self._config.max_tokens,
+            temperature=self._config.temperature,
+            timeout=self._config.timeout_seconds,
         )
-        try:
-            with _no_proxy_opener().open(
-                http_request,
-                timeout=self._config.timeout_seconds,
-            ) as response:
-                data = json.loads(response.read().decode("utf-8"))
-        except (OSError, TimeoutError, error.URLError, json.JSONDecodeError) as exc:
-            raise RuntimeError("local LLM request failed") from exc
-
-        try:
-            content = data["choices"][0]["message"]["content"]
-        except (KeyError, IndexError, TypeError) as exc:
-            raise RuntimeError("local LLM response shape is invalid") from exc
-        return str(content)
+        return _student_explanation_from_text(content)
 
 
 def build_default_enhancer() -> ExplanationEnhancer:

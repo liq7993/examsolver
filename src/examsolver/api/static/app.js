@@ -4,16 +4,29 @@ const state = {
   activeStepIndex: 0,
   busy: false,
   settings: { provider: "", providers: [] },
+  capabilities: [],
+  historyItems: [],
+  activeSubject: null,
 };
 
 const ONBOARDED_KEY = "examsolver:onboarded";
 const SIDEBAR_KEY = "examsolver:sidebar-collapsed";
+// "general" is the catch-all fallback skill, not a study subject, so it is
+// hidden from the homepage project cards.
+const HIDDEN_CARD_SUBJECTS = new Set(["general"]);
 
 const els = {
   form: document.querySelector("#solve-form"),
   input: document.querySelector("#question-input"),
   submit: document.querySelector("#submit-button"),
   empty: document.querySelector("#empty-page"),
+  subjectCards: document.querySelector("#subject-cards"),
+  projectView: document.querySelector("#project-view"),
+  projectBack: document.querySelector("#project-back"),
+  projectTitle: document.querySelector("#project-title"),
+  projectSub: document.querySelector("#project-sub"),
+  projectList: document.querySelector("#project-list"),
+  pageFlash: document.querySelector("#page-flash"),
   noteStack: document.querySelector("#note-stack"),
   pagePrev: document.querySelector("#page-prev"),
   pageNext: document.querySelector("#page-next"),
@@ -373,12 +386,20 @@ function updatePager() {
 function renderCurrentPage() {
   const page = currentPage();
   updatePager();
+  els.pageFlash.hidden = true;
 
   if (!page) {
-    els.empty.hidden = false;
     els.noteStack.hidden = true;
     els.resultStatus.hidden = true;
     els.pageTools.hidden = true;
+    if (state.activeSubject) {
+      els.empty.hidden = true;
+      els.projectView.hidden = false;
+      renderProjectView();
+    } else {
+      els.empty.hidden = false;
+      els.projectView.hidden = true;
+    }
     return;
   }
 
@@ -387,6 +408,7 @@ function renderCurrentPage() {
   const explanation = solve.student_explanation;
 
   els.empty.hidden = true;
+  els.projectView.hidden = true;
   els.noteStack.hidden = false;
   els.pageTools.hidden = false;
   els.problemSubject.textContent = localize(labels.subject, solve.subject);
@@ -494,9 +516,11 @@ async function solveQuestion(question) {
   if (!trimmed || state.busy) return;
 
   setBusy(true);
-  els.empty.hidden = false;
+  els.empty.hidden = true;
+  els.projectView.hidden = true;
   els.noteStack.hidden = true;
-  els.empty.innerHTML = "<p>正在生成解题笔记...</p>";
+  els.pageFlash.hidden = false;
+  els.pageFlash.textContent = "正在生成解题笔记…";
 
   try {
     const response = await fetch("/solve", {
@@ -512,41 +536,133 @@ async function solveQuestion(question) {
     renderCurrentPage();
     await refreshHistory();
   } catch (error) {
-    els.empty.hidden = false;
-    els.noteStack.hidden = true;
-    els.empty.innerHTML = `<p>${escapeHtml(error.message || "请求失败")}</p>`;
+    els.pageFlash.hidden = false;
+    els.pageFlash.textContent = error.message || "请求失败";
   } finally {
     setBusy(false);
   }
 }
 
+function renderHistory() {
+  const items = state.historyItems;
+  if (!items.length) {
+    els.history.innerHTML = '<p class="muted">暂无历史</p>';
+    return;
+  }
+  els.history.innerHTML = items
+    .map(
+      (item) => `
+        <button
+          class="history-item"
+          type="button"
+          data-solve-id="${escapeHtml(item.solve_id)}"
+          data-question-snippet="${escapeHtml(item.question_snippet || "历史解答")}"
+        >
+          <strong>${escapeHtml(item.question_snippet || item.solve_id)}</strong>
+          <span>${escapeHtml(localize(labels.subject, item.subject))} · ${escapeHtml(localize(labels.type, item.question_type))}</span>
+        </button>
+      `,
+    )
+    .join("");
+}
+
 async function refreshHistory() {
   try {
-    const response = await fetch("/solve/history?limit=20", { cache: "no-store" });
+    const response = await fetch("/solve/history?limit=100", { cache: "no-store" });
     const page = await response.json();
-    const items = Array.isArray(page.items) ? page.items : [];
-    if (!items.length) {
-      els.history.innerHTML = '<p class="muted">暂无历史</p>';
-      return;
-    }
-    els.history.innerHTML = items
-      .map(
-        (item) => `
-          <button
-            class="history-item"
-            type="button"
-            data-solve-id="${escapeHtml(item.solve_id)}"
-            data-question-snippet="${escapeHtml(item.question_snippet || "历史解答")}"
-          >
-            <strong>${escapeHtml(item.question_snippet || item.solve_id)}</strong>
-            <span>${escapeHtml(localize(labels.subject, item.subject))} · ${escapeHtml(localize(labels.type, item.question_type))}</span>
-          </button>
-        `,
-      )
-      .join("");
+    state.historyItems = Array.isArray(page.items) ? page.items : [];
   } catch {
+    state.historyItems = [];
     els.history.innerHTML = '<p class="muted">历史不可用</p>';
+    renderSubjectCards();
+    return;
   }
+  renderHistory();
+  renderSubjectCards();
+  if (state.activeSubject && !currentPage()) renderProjectView();
+}
+
+function subjectSolvedCount(subject) {
+  return state.historyItems.filter((item) => (item.subject || "unknown") === subject).length;
+}
+
+function subjectNotes(subject) {
+  return state.historyItems.filter((item) => (item.subject || "unknown") === subject);
+}
+
+function renderSubjectCards() {
+  const subjects = state.capabilities.filter((item) => !HIDDEN_CARD_SUBJECTS.has(item.name));
+  if (!subjects.length) {
+    els.subjectCards.innerHTML = '<p class="muted">科目加载中…</p>';
+    return;
+  }
+  els.subjectCards.innerHTML = subjects
+    .map((subject) => {
+      const types = Array.isArray(subject.question_types) ? subject.question_types : [];
+      const typeLabels = types.map((type) => localize(labels.type, type)).join(" · ") || "通用解答";
+      const count = subjectSolvedCount(subject.name);
+      return `
+        <button class="subject-card" type="button" data-subject="${escapeHtml(subject.name)}">
+          <span class="subject-card-name">${escapeHtml(localize(labels.subject, subject.name))}</span>
+          <span class="subject-card-types">${escapeHtml(typeLabels)}</span>
+          <span class="subject-card-count">${count} 条解答</span>
+        </button>
+      `;
+    })
+    .join("");
+}
+
+async function loadCapabilities() {
+  try {
+    const response = await fetch("/solve/capabilities", { cache: "no-store" });
+    if (!response.ok) throw new Error("capabilities unavailable");
+    const data = await response.json();
+    state.capabilities = Array.isArray(data.subjects) ? data.subjects : [];
+  } catch {
+    state.capabilities = [];
+  }
+  renderSubjectCards();
+}
+
+function renderProjectView() {
+  const subject = state.activeSubject;
+  if (!subject) return;
+  els.projectTitle.textContent = localize(labels.subject, subject);
+  const capability = state.capabilities.find((item) => item.name === subject);
+  const types = capability && Array.isArray(capability.question_types) ? capability.question_types : [];
+  const typeLabels = types.map((type) => localize(labels.type, type)).join(" · ");
+  els.projectSub.textContent = typeLabels ? `支持题型：${typeLabels}` : "";
+
+  const notes = subjectNotes(subject);
+  if (!notes.length) {
+    els.projectList.innerHTML = '<p class="muted">还没有该科目的解答，直接输入一道题开始。</p>';
+    return;
+  }
+  els.projectList.innerHTML = notes
+    .map(
+      (item) => `
+        <button
+          class="project-item"
+          type="button"
+          data-solve-id="${escapeHtml(item.solve_id)}"
+          data-question-snippet="${escapeHtml(item.question_snippet || "历史解答")}"
+        >
+          <strong>${escapeHtml(item.question_snippet || item.solve_id)}</strong>
+          <span>${escapeHtml(localize(labels.type, item.question_type))} · ${escapeHtml(formatTime(item.created_at))}</span>
+        </button>
+      `,
+    )
+    .join("");
+}
+
+function openSubjectProject(subject) {
+  state.activeSubject = subject;
+  renderCurrentPage();
+}
+
+function closeSubjectProject() {
+  state.activeSubject = null;
+  renderCurrentPage();
 }
 
 async function loadSolve(solveId, questionSnippet = "历史解答") {
@@ -836,10 +952,28 @@ els.newThread.addEventListener("click", () => {
   state.pages = [];
   state.currentIndex = -1;
   state.activeStepIndex = 0;
+  state.activeSubject = null;
   els.input.value = "";
   resizeComposer();
   renderCurrentPage();
   els.input.focus();
+});
+
+els.subjectCards.addEventListener("click", (event) => {
+  const card = event.target.closest("[data-subject]");
+  if (!card) return;
+  openSubjectProject(card.getAttribute("data-subject"));
+});
+
+els.projectBack.addEventListener("click", closeSubjectProject);
+
+els.projectList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-solve-id]");
+  if (!button) return;
+  loadSolve(
+    button.getAttribute("data-solve-id"),
+    button.getAttribute("data-question-snippet") || "历史解答",
+  );
 });
 
 els.openSettings.addEventListener("click", openSettings);
@@ -866,6 +1000,7 @@ document.addEventListener("keydown", (event) => {
 renderCurrentPage();
 resizeComposer();
 refreshHistory();
+loadCapabilities();
 loadConfig();
 initSidebar();
 maybeShowTutorial();

@@ -56,14 +56,34 @@
           </div>
 
           <div id="empty-page" class="empty-page">
-            <div class="hero">
-              <p class="hero-eyebrow">EXAMSOLVER</p>
-              <h2 class="hero-title">输入一道题，<br />生成可复用的解题笔记</h2>
-              <p class="hero-sub">
-                支持求导、矩阵乘法、受力平衡、齿轮传动、公差配合等；公式自动渲染，结果可导出 Markdown 与 PDF。
-              </p>
+            <div class="home">
+              <div class="hero">
+                <p class="hero-eyebrow">EXAMSOLVER</p>
+                <h2 class="hero-title">输入一道题，<br />生成可复用的解题笔记</h2>
+                <p class="hero-sub">
+                  支持求导、矩阵乘法、受力平衡、齿轮传动、公差配合等；公式自动渲染，结果可导出 Markdown 与 PDF。
+                </p>
+              </div>
+              <section class="subject-board" aria-label="科目项目">
+                <p class="subject-board-title">科目项目</p>
+                <div id="subject-cards" class="subject-cards" aria-live="polite"></div>
+              </section>
             </div>
           </div>
+
+          <div id="project-view" class="project-view" hidden>
+            <header class="project-head">
+              <button id="project-back" class="ghost-button" type="button">← 返回</button>
+              <div class="project-head-text">
+                <p class="eyebrow">科目项目</p>
+                <h2 id="project-title">科目</h2>
+                <p id="project-sub" class="muted"></p>
+              </div>
+            </header>
+            <div id="project-list" class="project-list" aria-live="polite"></div>
+          </div>
+
+          <div id="page-flash" class="page-flash" aria-live="polite" hidden></div>
 
           <div id="note-stack" class="note-stack" hidden>
             <section class="note-panel">

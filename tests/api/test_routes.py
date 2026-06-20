@@ -261,3 +261,12 @@ def test_frontend_static_shell_is_served() -> None:
     assert 'id="expand-sidebar"' in html
     assert "sidebar-collapsed" in script
     assert "examsolver:sidebar-collapsed" in script
+    assert 'id="subject-cards"' in html
+    assert 'id="project-view"' in html
+    assert 'id="project-back"' in html
+    assert "科目项目" in html
+    assert "loadCapabilities" in script
+    assert "renderSubjectCards" in script
+    assert "renderProjectView" in script
+    assert "/solve/capabilities" in script
+    assert "data-subject" in script

@@ -7,6 +7,7 @@ const state = {
 };
 
 const ONBOARDED_KEY = "examsolver:onboarded";
+const SIDEBAR_KEY = "examsolver:sidebar-collapsed";
 
 const els = {
   form: document.querySelector("#solve-form"),
@@ -53,6 +54,9 @@ const els = {
   tutorialOverlay: document.querySelector("#tutorial-overlay"),
   tutorialOpenSettings: document.querySelector("#tutorial-open-settings"),
   tutorialDismiss: document.querySelector("#tutorial-dismiss"),
+  appShell: document.querySelector(".app-shell"),
+  collapseSidebar: document.querySelector("#collapse-sidebar"),
+  expandSidebar: document.querySelector("#expand-sidebar"),
 };
 
 const labels = {
@@ -659,6 +663,31 @@ async function saveSettings() {
   }
 }
 
+function applySidebarState(collapsed) {
+  els.appShell.classList.toggle("sidebar-collapsed", collapsed);
+  els.expandSidebar.hidden = !collapsed;
+  els.collapseSidebar.setAttribute("aria-expanded", String(!collapsed));
+}
+
+function setSidebar(collapsed) {
+  applySidebarState(collapsed);
+  try {
+    window.localStorage.setItem(SIDEBAR_KEY, collapsed ? "1" : "0");
+  } catch {
+    // localStorage unavailable; state simply won't persist across reloads.
+  }
+}
+
+function initSidebar() {
+  let collapsed = false;
+  try {
+    collapsed = window.localStorage.getItem(SIDEBAR_KEY) === "1";
+  } catch {
+    collapsed = false;
+  }
+  applySidebarState(collapsed);
+}
+
 function maybeShowTutorial() {
   let onboarded = null;
   try {
@@ -827,6 +856,9 @@ els.tutorialOpenSettings.addEventListener("click", () => {
   openSettings();
 });
 
+els.collapseSidebar.addEventListener("click", () => setSidebar(true));
+els.expandSidebar.addEventListener("click", () => setSidebar(false));
+
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !els.settingsOverlay.hidden) closeSettings();
 });
@@ -835,4 +867,5 @@ renderCurrentPage();
 resizeComposer();
 refreshHistory();
 loadConfig();
+initSidebar();
 maybeShowTutorial();

@@ -65,6 +65,41 @@ button {
   gap: 12px;
 }
 
+.sidebar-head-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.app-shell.sidebar-collapsed {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.app-shell.sidebar-collapsed .sidebar {
+  display: none;
+}
+
+.expand-sidebar {
+  position: absolute;
+  top: 14px;
+  left: 24px;
+  z-index: 20;
+  width: 34px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--text-1);
+  box-shadow: var(--shadow-soft);
+}
+
+.expand-sidebar[hidden] {
+  display: none;
+}
+
 .sidebar h1 {
   margin: 0;
   font-family: "Cormorant Garamond", Georgia, serif;
@@ -876,6 +911,10 @@ button {
   }
 
   .sidebar {
+    display: none;
+  }
+
+  .expand-sidebar {
     display: none;
   }
 

@@ -15,7 +15,12 @@
             <h1>ExamSolver</h1>
             <p>单题求解工作台</p>
           </div>
-          <button id="new-thread" class="icon-button" type="button" title="新题">＋</button>
+          <div class="sidebar-head-actions">
+            <button id="new-thread" class="icon-button" type="button" title="新题">＋</button>
+            <button id="collapse-sidebar" class="icon-button" type="button" title="收起侧边栏">
+              «
+            </button>
+          </div>
         </div>
 
         <section class="sidebar-section">
@@ -35,6 +40,15 @@
 
       <section class="workspace" aria-label="当前解答页">
         <section class="workspace-content" aria-live="polite">
+          <button
+            id="expand-sidebar"
+            class="expand-sidebar"
+            type="button"
+            title="展开侧边栏"
+            hidden
+          >
+            ☰
+          </button>
           <div class="page-nav-bar">
             <button id="page-prev" class="page-nav-button" type="button" title="上一页">↑</button>
             <span id="page-indicator" class="page-indicator">0 / 0</span>

@@ -257,3 +257,7 @@ def test_frontend_static_shell_is_served() -> None:
     assert "saveSettings" in script
     assert "/config" in script
     assert "examsolver:onboarded" in script
+    assert 'id="collapse-sidebar"' in html
+    assert 'id="expand-sidebar"' in html
+    assert "sidebar-collapsed" in script
+    assert "examsolver:sidebar-collapsed" in script

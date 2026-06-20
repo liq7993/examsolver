@@ -3,7 +3,10 @@ const state = {
   currentIndex: -1,
   activeStepIndex: 0,
   busy: false,
+  settings: { provider: "", providers: [] },
 };
+
+const ONBOARDED_KEY = "examsolver:onboarded";
 
 const els = {
   form: document.querySelector("#solve-form"),
@@ -38,6 +41,18 @@ const els = {
   explanationGrid: document.querySelector("#explanation-grid"),
   history: document.querySelector("#history-list"),
   newThread: document.querySelector("#new-thread"),
+  openSettings: document.querySelector("#open-settings"),
+  closeSettings: document.querySelector("#close-settings"),
+  settingsOverlay: document.querySelector("#settings-overlay"),
+  providerSelect: document.querySelector("#provider-select"),
+  apiKeyField: document.querySelector("#api-key-field"),
+  apiKeyInput: document.querySelector("#api-key-input"),
+  apiKeyState: document.querySelector("#api-key-state"),
+  saveSettings: document.querySelector("#save-settings"),
+  settingsFeedback: document.querySelector("#settings-feedback"),
+  tutorialOverlay: document.querySelector("#tutorial-overlay"),
+  tutorialOpenSettings: document.querySelector("#tutorial-open-settings"),
+  tutorialDismiss: document.querySelector("#tutorial-dismiss"),
 };
 
 const labels = {
@@ -559,6 +574,110 @@ function goToPage(delta) {
   renderCurrentPage();
 }
 
+function providerById(name) {
+  return state.settings.providers.find((item) => item.name === name) || null;
+}
+
+function describeKeyState(provider) {
+  if (!provider) return "";
+  if (!provider.requires_key) return "无需 API key";
+  if (provider.key_set) return `已配置 · ${provider.key_masked || "已保存"}`;
+  return "尚未配置 API key";
+}
+
+function syncApiKeyField() {
+  const provider = providerById(els.providerSelect.value);
+  const requiresKey = provider ? provider.requires_key : true;
+  els.apiKeyField.hidden = !requiresKey;
+  els.apiKeyInput.value = "";
+  if (provider && provider.requires_key && provider.key_set) {
+    els.apiKeyInput.placeholder = `已保存 ${provider.key_masked || ""}，留空则保持不变`;
+  } else {
+    els.apiKeyInput.placeholder = "粘贴 API key";
+  }
+  els.apiKeyState.textContent = describeKeyState(provider);
+}
+
+function renderSettings() {
+  const { providers, provider } = state.settings;
+  els.providerSelect.innerHTML = providers
+    .map((item) => `<option value="${escapeHtml(item.name)}">${escapeHtml(item.label)}</option>`)
+    .join("");
+  if (provider) els.providerSelect.value = provider;
+  syncApiKeyField();
+}
+
+function applySettingsPayload(data) {
+  state.settings = {
+    provider: data.provider || "",
+    providers: Array.isArray(data.providers) ? data.providers : [],
+  };
+  renderSettings();
+}
+
+async function loadConfig() {
+  try {
+    const response = await fetch("/config", { cache: "no-store" });
+    if (!response.ok) throw new Error("读取设置失败");
+    applySettingsPayload(await response.json());
+  } catch (error) {
+    els.settingsFeedback.textContent = error.message || "读取设置失败";
+  }
+}
+
+function openSettings() {
+  els.settingsOverlay.hidden = false;
+  els.settingsFeedback.textContent = "";
+  renderSettings();
+  els.providerSelect.focus();
+}
+
+function closeSettings() {
+  els.settingsOverlay.hidden = true;
+}
+
+async function saveSettings() {
+  const provider = els.providerSelect.value;
+  if (!provider) return;
+  const apiKey = els.apiKeyInput.value.trim();
+  els.saveSettings.disabled = true;
+  els.settingsFeedback.textContent = "保存中…";
+  try {
+    const response = await fetch("/config", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider, api_key: apiKey || null }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || "保存失败");
+    applySettingsPayload(data);
+    els.settingsFeedback.textContent = "已保存，立即生效";
+  } catch (error) {
+    els.settingsFeedback.textContent = error.message || "保存失败";
+  } finally {
+    els.saveSettings.disabled = false;
+  }
+}
+
+function maybeShowTutorial() {
+  let onboarded = null;
+  try {
+    onboarded = window.localStorage.getItem(ONBOARDED_KEY);
+  } catch {
+    onboarded = null;
+  }
+  if (!onboarded) els.tutorialOverlay.hidden = false;
+}
+
+function dismissTutorial() {
+  els.tutorialOverlay.hidden = true;
+  try {
+    window.localStorage.setItem(ONBOARDED_KEY, "1");
+  } catch {
+    // localStorage unavailable (e.g. private mode); tutorial reappears next load.
+  }
+}
+
 els.form.addEventListener("submit", (event) => {
   event.preventDefault();
   solveQuestion(els.input.value);
@@ -694,6 +813,26 @@ els.newThread.addEventListener("click", () => {
   els.input.focus();
 });
 
+els.openSettings.addEventListener("click", openSettings);
+els.closeSettings.addEventListener("click", closeSettings);
+els.saveSettings.addEventListener("click", saveSettings);
+els.providerSelect.addEventListener("change", syncApiKeyField);
+els.settingsOverlay.addEventListener("click", (event) => {
+  if (event.target === els.settingsOverlay) closeSettings();
+});
+
+els.tutorialDismiss.addEventListener("click", dismissTutorial);
+els.tutorialOpenSettings.addEventListener("click", () => {
+  dismissTutorial();
+  openSettings();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !els.settingsOverlay.hidden) closeSettings();
+});
+
 renderCurrentPage();
 resizeComposer();
 refreshHistory();
+loadConfig();
+maybeShowTutorial();

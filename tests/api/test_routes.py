@@ -247,3 +247,13 @@ def test_frontend_static_shell_is_served() -> None:
     assert "/export.pdf" in script
     assert "downloadText" in script
     assert "resizeComposer" in script
+    assert 'id="open-settings"' in html
+    assert 'id="settings-overlay"' in html
+    assert 'id="provider-select"' in html
+    assert 'id="tutorial-overlay"' in html
+    assert "消费上限" in html
+    assert "不要泄露" in html
+    assert "loadConfig" in script
+    assert "saveSettings" in script
+    assert "/config" in script
+    assert "examsolver:onboarded" in script

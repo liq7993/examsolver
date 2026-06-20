@@ -282,6 +282,30 @@ class LLMStatusBody(BaseModel):
     max_tokens: int
 
 
+class ProviderInfoBody(BaseModel):
+    """One selectable LLM provider; key state is masked for the client."""
+
+    name: str
+    label: str
+    requires_key: bool
+    key_set: bool
+    key_masked: str | None
+
+
+class SettingsBody(BaseModel):
+    """Runtime LLM settings snapshot for the settings page (keys masked)."""
+
+    provider: str
+    providers: list[ProviderInfoBody]
+
+
+class UpdateSettingsBody(BaseModel):
+    """Request body for PUT /config; a blank api_key keeps the stored key."""
+
+    provider: str = Field(..., min_length=1)
+    api_key: str | None = None
+
+
 class AddMistakeRequestBody(BaseModel):
     solve_id: str = Field(..., min_length=1)
     user_note: str | None = None

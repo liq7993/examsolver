@@ -680,6 +680,196 @@ button {
   font-family: "IBM Plex Mono", "SF Mono", Consolas, monospace;
 }
 
+.sidebar-foot {
+  flex-shrink: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.sidebar-foot-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 0.75rem;
+  background: var(--surface-3);
+  color: var(--text-1);
+  font-size: 0.86rem;
+  transition:
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.sidebar-foot-button:hover {
+  background: var(--accent-tint);
+  color: var(--accent-2);
+}
+
+.sidebar-foot-button .gear {
+  font-size: 1.05rem;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(29, 29, 31, 0.42);
+}
+
+.modal-overlay[hidden] {
+  display: none;
+}
+
+.modal {
+  width: min(520px, 100%);
+  max-height: calc(100vh - 48px);
+  display: grid;
+  gap: 18px;
+  overflow-y: auto;
+  padding: 22px;
+  border-radius: 1.25rem;
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-lift);
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.modal-head h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.modal-body {
+  display: grid;
+  gap: 16px;
+}
+
+.modal-hint {
+  margin: 0;
+  color: var(--text-1);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field > span {
+  color: var(--text-2);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.field select,
+.field input {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  outline: 0;
+  background: var(--surface-2);
+  color: var(--text-0);
+  font-size: 0.95rem;
+}
+
+.field select:focus,
+.field input:focus {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-soft);
+}
+
+.field-note {
+  color: var(--text-2);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.risk-callout {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 0.85rem;
+  background: var(--accent-tint);
+  border: 1px solid var(--accent-tint-2);
+}
+
+.risk-title {
+  margin: 0;
+  color: var(--accent-2);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.risk-callout ul,
+.tutorial-steps {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 6px;
+  color: var(--text-1);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.tutorial-steps code {
+  padding: 0.05em 0.35em;
+  border-radius: 0.35rem;
+  background: var(--surface-3);
+  font-family: "IBM Plex Mono", "SF Mono", Consolas, monospace;
+  font-size: 0.82em;
+}
+
+.modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.primary-text-button {
+  min-height: 40px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #ff6a00, #d94e00);
+  color: #ffffff;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.primary-text-button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.ghost-button {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: var(--surface-2);
+  color: var(--text-1);
+  font-size: 0.92rem;
+}
+
+.ghost-button:hover {
+  color: var(--text-0);
+}
+
 @media (max-width: 760px) {
   .app-shell {
     grid-template-columns: 1fr;

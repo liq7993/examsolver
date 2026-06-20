@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -15,15 +17,30 @@ from examsolver.api.routes.health import router as health_router
 from examsolver.api.routes.library import router as library_router
 from examsolver.api.routes.llm import router as llm_router
 from examsolver.api.routes.mistakes import router as mistakes_router
+from examsolver.api.routes.settings import router as settings_router
 from examsolver.api.routes.solve import router as solve_router
+from examsolver.runtime_settings import apply_to_environ, load_settings
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
+
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+    """Project stored LLM settings into the environment at startup.
+
+    ``override=False`` lets a deployment- or shell-provided value win over the
+    stored file, while still picking up the user's saved choice on a clean boot.
+    Running here (not at import) keeps test imports from mutating ``os.environ``.
+    """
+
+    apply_to_environ(load_settings(), override=False)
+    yield
 
 
 def create_app() -> FastAPI:
     """Create the FastAPI app without embedding solve business logic."""
 
-    app = FastAPI(title="Examsolver", version="0.0.1")
+    app = FastAPI(title="Examsolver", version="0.0.1", lifespan=_lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origin_regex=r"^http://(localhost|127\.0\.0\.1):\d+$",
@@ -38,6 +55,7 @@ def create_app() -> FastAPI:
     app.include_router(solve_router)
     app.include_router(mistakes_router)
     app.include_router(export_router)
+    app.include_router(settings_router)
 
     @app.get("/", include_in_schema=False, name="frontend_index")
     def frontend_index() -> FileResponse:

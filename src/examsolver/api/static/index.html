@@ -24,6 +24,13 @@
             <p class="muted">暂无历史</p>
           </div>
         </section>
+
+        <div class="sidebar-foot">
+          <button id="open-settings" class="sidebar-foot-button" type="button">
+            <span class="gear" aria-hidden="true">⚙</span>
+            <span>设置</span>
+          </button>
+        </div>
       </aside>
 
       <section class="workspace" aria-label="当前解答页">
@@ -118,6 +125,103 @@
         </form>
       </section>
     </main>
+
+    <div class="modal-overlay" id="settings-overlay" hidden>
+      <div
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settings-title"
+      >
+        <div class="modal-head">
+          <h2 id="settings-title">设置 · LLM 服务商</h2>
+          <button id="close-settings" class="icon-button" type="button" title="关闭">×</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-hint">
+            选择一个云端大模型来生成「学生解释」。确定性解题（求导、矩阵、受力平衡等）由本地
+            sympy 内核完成，<b>无需 API key、永远免费</b>。
+          </p>
+
+          <label class="field">
+            <span>服务商</span>
+            <select id="provider-select"></select>
+          </label>
+
+          <label class="field" id="api-key-field">
+            <span>API Key</span>
+            <input
+              id="api-key-input"
+              type="password"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="粘贴 API key"
+            />
+            <small id="api-key-state" class="field-note"></small>
+          </label>
+
+          <div class="risk-callout">
+            <p class="risk-title">⚠ 使用第三方 API 前请注意</p>
+            <ul>
+              <li>题目内容会发送到所选服务商，请勿提交隐私或涉密信息。</li>
+              <li>请在服务商后台设置<b>消费上限</b>，避免意外扣费。</li>
+              <li>API key 等同密码：不要泄露、不要截图、不要提交到 Git。</li>
+              <li>key 仅保存在本机服务器，界面只显示末四位。</li>
+            </ul>
+          </div>
+
+          <div class="modal-actions">
+            <button id="save-settings" class="primary-text-button" type="button">保存</button>
+            <span id="settings-feedback" class="field-note" aria-live="polite"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="tutorial-overlay" hidden>
+      <div
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="tutorial-title"
+      >
+        <div class="modal-head">
+          <h2 id="tutorial-title">欢迎使用 ExamSolver</h2>
+        </div>
+        <div class="modal-body">
+          <p class="modal-hint">三步开始：</p>
+          <ol class="tutorial-steps">
+            <li>
+              <b>直接出题</b>：求导、矩阵乘法、受力平衡等由本地 sympy
+              内核求解，<b>无需联网、无需 API key</b>。
+            </li>
+            <li>
+              <b>想要「学生解释」？</b>
+              在「设置」里选择一个云端大模型（如 DeepSeek / OpenAI / Moonshot），粘贴它的 API key。
+            </li>
+            <li>
+              <b>如何获取 key</b>：前往服务商官网注册 → 控制台「API
+              Keys」创建 → 复制以 <code>sk-</code> 开头的字符串。建议先充小额并设置消费上限。
+            </li>
+          </ol>
+          <div class="risk-callout">
+            <p class="risk-title">⚠ 安全提示</p>
+            <ul>
+              <li>API key 等同密码：不要泄露、截图或提交到 Git。</li>
+              <li>题目会发送给第三方服务商，请勿提交隐私／涉密内容。</li>
+              <li>务必在服务商后台设置<b>消费上限</b>。</li>
+            </ul>
+          </div>
+          <div class="modal-actions">
+            <button id="tutorial-open-settings" class="primary-text-button" type="button">
+              去设置
+            </button>
+            <button id="tutorial-dismiss" class="ghost-button" type="button">我知道了</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script src="/static/vendor/katex/katex.min.js" defer></script>
     <script src="/static/app.js" defer></script>
   </body>

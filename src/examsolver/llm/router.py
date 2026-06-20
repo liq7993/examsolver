@@ -10,10 +10,12 @@ import json
 import os
 from typing import Any, cast
 
+from examsolver.config import cloud_llm_provider
 from examsolver.llm.base import LLMClient
 from examsolver.llm.base import Message
 from examsolver.llm.claude_client import ClaudeClient
 from examsolver.llm.local_gguf import LocalGGUFClient
+from examsolver.llm.openai_compatible import OpenAICompatibleClient
 
 
 def pick_llm(task_kind: str, needs_vision: bool) -> LLMClient | None:
@@ -22,6 +24,10 @@ def pick_llm(task_kind: str, needs_vision: bool) -> LLMClient | None:
     provider = os.getenv("EXAMSOLVER_LLM_PROVIDER", "").strip().lower()
     if provider == "claude":
         return ClaudeClient(task_kind=task_kind)
+    if not needs_vision:
+        cloud_client = _cloud_openai_client(provider, task_kind)
+        if cloud_client is not None:
+            return cloud_client
     if provider == "local_gguf" and task_kind in {"route", "extract_simple"} and not needs_vision:
         return LocalGGUFClient(task_kind=task_kind)
 
@@ -34,6 +40,29 @@ def pick_llm(task_kind: str, needs_vision: bool) -> LLMClient | None:
     if task_kind in {"route", "extract_simple"}:
         return LocalGGUFClient(task_kind=task_kind)
     return None
+
+
+def _cloud_openai_client(provider: str, task_kind: str) -> OpenAICompatibleClient | None:
+    """Return a configured cloud client when ``provider`` is registered and keyed.
+
+    Cloud OpenAI-compatible providers serve every text task; vision stays on
+    Claude. A missing API key returns ``None`` so the caller degrades gracefully
+    to the local/offline fallbacks instead of failing.
+    """
+
+    spec = cloud_llm_provider(provider)
+    if spec is None:
+        return None
+    api_key = os.getenv(spec.api_key_env)
+    if not api_key:
+        return None
+    return OpenAICompatibleClient(
+        base_url=spec.base_url,
+        model=spec.default_model,
+        api_key=api_key,
+        task_kind=task_kind,
+        provider_label=spec.name,
+    )
 
 
 class _OfflineGeneralSolveClient:

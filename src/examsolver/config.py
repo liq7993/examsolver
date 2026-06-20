@@ -115,3 +115,68 @@ def _env_float(name: str, default: float) -> float:
         return float(os.environ.get(name, str(default)))
     except ValueError:
         return default
+
+
+@dataclass(frozen=True, slots=True)
+class CloudLLMProvider:
+    """A cloud LLM reachable over the OpenAI-compatible chat-completions API."""
+
+    name: str
+    label: str
+    base_url: str
+    default_model: str
+    api_key_env: str
+
+
+# Cloud providers that speak the OpenAI chat-completions wire format. Select one
+# with EXAMSOLVER_LLM_PROVIDER=<name>; it authenticates with the key read from
+# ``api_key_env``. Adding a provider = adding one entry here, no code changes.
+#
+# DeepSeek, Moonshot, and OpenAI expose documented OpenAI-compatible endpoints.
+# MiniMax's base_url/default_model below are best-effort and MUST be verified
+# against MiniMax's current API (it may use a native format); a per-environment
+# override is still possible through the registry if they drift.
+#
+# Local-only models (GPT-OSS / Gemma) intentionally stay out of this registry.
+_CLOUD_LLM_PROVIDERS: dict[str, CloudLLMProvider] = {
+    "minimax": CloudLLMProvider(
+        name="minimax",
+        label="MiniMax",
+        base_url="https://api.minimaxi.com/v1",
+        default_model="MiniMax-Text-01",
+        api_key_env="MINIMAX_API_KEY",
+    ),
+    "deepseek": CloudLLMProvider(
+        name="deepseek",
+        label="DeepSeek",
+        base_url="https://api.deepseek.com/v1",
+        default_model="deepseek-chat",
+        api_key_env="DEEPSEEK_API_KEY",
+    ),
+    "moonshot": CloudLLMProvider(
+        name="moonshot",
+        label="Moonshot Kimi",
+        base_url="https://api.moonshot.cn/v1",
+        default_model="moonshot-v1-8k",
+        api_key_env="MOONSHOT_API_KEY",
+    ),
+    "openai": CloudLLMProvider(
+        name="openai",
+        label="OpenAI",
+        base_url="https://api.openai.com/v1",
+        default_model="gpt-4o-mini",
+        api_key_env="OPENAI_API_KEY",
+    ),
+}
+
+
+def cloud_llm_provider(name: str) -> CloudLLMProvider | None:
+    """Return the registered cloud provider for ``name`` (case-insensitive)."""
+
+    return _CLOUD_LLM_PROVIDERS.get(name.strip().lower())
+
+
+def cloud_llm_providers() -> tuple[CloudLLMProvider, ...]:
+    """Return all registered cloud providers, for settings/UI enumeration."""
+
+    return tuple(_CLOUD_LLM_PROVIDERS.values())

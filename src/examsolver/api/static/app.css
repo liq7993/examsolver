@@ -422,6 +422,90 @@ button {
   font-size: 0.78rem;
 }
 
+#mistakes-export {
+  margin-left: auto;
+}
+
+.mistake-item {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 0.85rem;
+  background: var(--surface-2);
+}
+
+.mistake-open {
+  display: grid;
+  gap: 6px;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--text-0);
+  text-align: left;
+  cursor: pointer;
+}
+
+.mistake-open strong {
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.mistake-open span {
+  color: var(--text-2);
+  font-size: 0.78rem;
+}
+
+.mistake-note-field {
+  display: grid;
+  gap: 4px;
+}
+
+.mistake-note-field span {
+  color: var(--text-2);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.mistake-note {
+  width: 100%;
+  min-height: 52px;
+  resize: vertical;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  background: var(--surface-1);
+  color: var(--text-0);
+  font: inherit;
+}
+
+.mistake-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mistake-actions button {
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  background: var(--surface-2);
+  color: var(--text-1);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.mistake-actions button:hover {
+  color: var(--text-0);
+}
+
+.mistake-feedback {
+  color: var(--text-2);
+  font-size: 0.78rem;
+}
+
 .page-flash {
   height: 100%;
   display: grid;
@@ -924,6 +1008,8 @@ button {
 
 .sidebar-foot {
   flex-shrink: 0;
+  display: grid;
+  gap: 8px;
   padding-top: 12px;
   border-top: 1px solid var(--line);
 }

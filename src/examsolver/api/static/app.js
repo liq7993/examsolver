@@ -7,6 +7,8 @@ const state = {
   capabilities: [],
   historyItems: [],
   activeSubject: null,
+  mistakesOpen: false,
+  mistakes: [],
 };
 
 const ONBOARDED_KEY = "examsolver:onboarded";
@@ -26,6 +28,13 @@ const els = {
   projectTitle: document.querySelector("#project-title"),
   projectSub: document.querySelector("#project-sub"),
   projectList: document.querySelector("#project-list"),
+  openMistakes: document.querySelector("#open-mistakes"),
+  mistakesView: document.querySelector("#mistakes-view"),
+  mistakesBack: document.querySelector("#mistakes-back"),
+  mistakesExport: document.querySelector("#mistakes-export"),
+  mistakesSub: document.querySelector("#mistakes-sub"),
+  mistakesList: document.querySelector("#mistakes-list"),
+  addMistake: document.querySelector("#add-mistake"),
   pageFlash: document.querySelector("#page-flash"),
   noteStack: document.querySelector("#note-stack"),
   pagePrev: document.querySelector("#page-prev"),
@@ -395,13 +404,20 @@ function renderCurrentPage() {
     els.noteStack.hidden = true;
     els.resultStatus.hidden = true;
     els.pageTools.hidden = true;
-    if (state.activeSubject) {
+    if (state.mistakesOpen) {
       els.empty.hidden = true;
+      els.projectView.hidden = true;
+      els.mistakesView.hidden = false;
+      renderMistakes();
+    } else if (state.activeSubject) {
+      els.empty.hidden = true;
+      els.mistakesView.hidden = true;
       els.projectView.hidden = false;
       renderProjectView();
     } else {
       els.empty.hidden = false;
       els.projectView.hidden = true;
+      els.mistakesView.hidden = true;
     }
     return;
   }
@@ -412,6 +428,7 @@ function renderCurrentPage() {
 
   els.empty.hidden = true;
   els.projectView.hidden = true;
+  els.mistakesView.hidden = true;
   els.noteStack.hidden = false;
   els.pageTools.hidden = false;
   els.problemSubject.textContent = localize(labels.subject, solve.subject);
@@ -653,6 +670,8 @@ async function solveQuestion(question) {
   setBusy(true);
   els.empty.hidden = true;
   els.projectView.hidden = true;
+  els.mistakesView.hidden = true;
+  state.mistakesOpen = false;
   els.noteStack.hidden = true;
   els.pageFlash.hidden = false;
   els.pageFlash.textContent = "正在生成解题笔记…";
@@ -798,6 +817,138 @@ function openSubjectProject(subject) {
 function closeSubjectProject() {
   state.activeSubject = null;
   renderCurrentPage();
+}
+
+async function loadMistakes() {
+  try {
+    const response = await fetch("/mistakes", { cache: "no-store" });
+    if (!response.ok) throw new Error("mistakes unavailable");
+    const data = await response.json();
+    state.mistakes = Array.isArray(data) ? data : [];
+  } catch {
+    state.mistakes = [];
+    els.mistakesList.innerHTML = '<p class="muted">错题本不可用</p>';
+    els.mistakesSub.textContent = "";
+    return;
+  }
+  renderMistakes();
+}
+
+function renderMistakes() {
+  const items = state.mistakes;
+  els.mistakesSub.textContent = items.length ? `${items.length} 道错题` : "";
+  if (!items.length) {
+    els.mistakesList.innerHTML =
+      '<p class="muted">还没有错题。在任意解答页点「加入错题本」。</p>';
+    return;
+  }
+  els.mistakesList.innerHTML = items
+    .map(
+      (item) => `
+        <article class="mistake-item" data-mistake-id="${escapeHtml(item.id)}">
+          <button
+            class="mistake-open"
+            type="button"
+            data-solve-id="${escapeHtml(item.solve_id)}"
+            data-question-snippet="错题回顾"
+          >
+            <strong>${escapeHtml(localize(labels.subject, item.subject))} · ${escapeHtml(localize(labels.type, item.question_type))}</strong>
+            <span>${escapeHtml(formatTime(item.created_at))} · 复习 ${Number(item.review_count) || 0} 次</span>
+          </button>
+          <label class="mistake-note-field">
+            <span>错因笔记</span>
+            <textarea class="mistake-note" data-mistake-note spellcheck="false" placeholder="写下错因或思路…">${escapeHtml(item.user_note || "")}</textarea>
+          </label>
+          <div class="mistake-actions">
+            <button type="button" data-save-note>保存笔记</button>
+            <button type="button" data-delete-mistake>删除</button>
+            <span class="mistake-feedback" data-mistake-feedback></span>
+          </div>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function openMistakes() {
+  state.mistakesOpen = true;
+  state.activeSubject = null;
+  state.pages = [];
+  state.currentIndex = -1;
+  renderCurrentPage();
+  loadMistakes();
+}
+
+function closeMistakes() {
+  state.mistakesOpen = false;
+  renderCurrentPage();
+}
+
+async function addCurrentMistake() {
+  const page = currentPage();
+  if (!page) return;
+  const solveId = page.solve.solve_id;
+  if (!solveId) {
+    showToolFeedback("无法加入：缺少 solve_id");
+    return;
+  }
+  try {
+    const response = await fetch("/mistakes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ solve_id: solveId }),
+    });
+    if (!response.ok) throw new Error("加入失败");
+    state.mistakes = [];
+    showToolFeedback("已加入错题本");
+  } catch (error) {
+    showToolFeedback(error.message || "加入失败");
+  }
+}
+
+async function saveMistakeNote(mistakeId, note, feedback) {
+  try {
+    const response = await fetch(`/mistakes/${encodeURIComponent(mistakeId)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_note: note }),
+    });
+    if (!response.ok) throw new Error("保存失败");
+    const updated = await response.json();
+    state.mistakes = state.mistakes.map((item) => (item.id === mistakeId ? updated : item));
+    if (feedback) feedback.textContent = "已保存";
+  } catch (error) {
+    if (feedback) feedback.textContent = error.message || "保存失败";
+  } finally {
+    if (feedback) {
+      window.setTimeout(() => {
+        feedback.textContent = "";
+      }, 1600);
+    }
+  }
+}
+
+async function deleteMistake(mistakeId) {
+  try {
+    const response = await fetch(`/mistakes/${encodeURIComponent(mistakeId)}`, {
+      method: "DELETE",
+    });
+    if (!response.ok) throw new Error("删除失败");
+    state.mistakes = state.mistakes.filter((item) => item.id !== mistakeId);
+    renderMistakes();
+  } catch {
+    // keep the list as-is so the user can retry
+  }
+}
+
+async function exportMistakes() {
+  try {
+    const response = await fetch("/mistakes/export.md", { cache: "no-store" });
+    if (!response.ok) throw new Error("导出失败");
+    downloadText("examsolver-mistakes.md", await response.text());
+  } catch {
+    els.mistakesSub.textContent = "导出失败";
+  }
 }
 
 async function loadSolve(solveId, questionSnippet = "历史解答") {
@@ -1088,6 +1239,7 @@ els.newThread.addEventListener("click", () => {
   state.currentIndex = -1;
   state.activeStepIndex = 0;
   state.activeSubject = null;
+  state.mistakesOpen = false;
   els.input.value = "";
   resizeComposer();
   renderCurrentPage();
@@ -1109,6 +1261,36 @@ els.projectList.addEventListener("click", (event) => {
     button.getAttribute("data-solve-id"),
     button.getAttribute("data-question-snippet") || "历史解答",
   );
+});
+
+els.openMistakes.addEventListener("click", openMistakes);
+els.mistakesBack.addEventListener("click", closeMistakes);
+els.mistakesExport.addEventListener("click", exportMistakes);
+els.addMistake.addEventListener("click", addCurrentMistake);
+
+els.mistakesList.addEventListener("click", (event) => {
+  const openButton = event.target.closest("[data-solve-id]");
+  if (openButton) {
+    loadSolve(
+      openButton.getAttribute("data-solve-id"),
+      openButton.getAttribute("data-question-snippet") || "错题回顾",
+    );
+    return;
+  }
+  const saveButton = event.target.closest("[data-save-note]");
+  if (saveButton) {
+    const item = saveButton.closest("[data-mistake-id]");
+    const id = item.getAttribute("data-mistake-id");
+    const note = item.querySelector("[data-mistake-note]").value;
+    const feedback = item.querySelector("[data-mistake-feedback]");
+    saveMistakeNote(id, note, feedback);
+    return;
+  }
+  const deleteButton = event.target.closest("[data-delete-mistake]");
+  if (deleteButton) {
+    const item = deleteButton.closest("[data-mistake-id]");
+    deleteMistake(item.getAttribute("data-mistake-id"));
+  }
 });
 
 els.openSettings.addEventListener("click", openSettings);

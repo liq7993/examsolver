@@ -31,6 +31,10 @@
         </section>
 
         <div class="sidebar-foot">
+          <button id="open-mistakes" class="sidebar-foot-button" type="button">
+            <span class="gear" aria-hidden="true">⚑</span>
+            <span>错题本</span>
+          </button>
           <button id="open-settings" class="sidebar-foot-button" type="button">
             <span class="gear" aria-hidden="true">⚙</span>
             <span>设置</span>
@@ -83,6 +87,19 @@
             <div id="project-list" class="project-list" aria-live="polite"></div>
           </div>
 
+          <div id="mistakes-view" class="project-view" hidden>
+            <header class="project-head">
+              <button id="mistakes-back" class="ghost-button" type="button">← 返回</button>
+              <div class="project-head-text">
+                <p class="eyebrow">复习</p>
+                <h2>错题本</h2>
+                <p id="mistakes-sub" class="muted"></p>
+              </div>
+              <button id="mistakes-export" class="ghost-button" type="button">导出 Markdown</button>
+            </header>
+            <div id="mistakes-list" class="project-list" aria-live="polite"></div>
+          </div>
+
           <div id="page-flash" class="page-flash" aria-live="polite" hidden></div>
 
           <div id="note-stack" class="note-stack" hidden>
@@ -106,6 +123,7 @@
               <button id="copy-note" type="button">复制笔记</button>
               <button id="download-note" type="button">下载 Markdown</button>
               <button id="export-pdf" type="button">导出 PDF</button>
+              <button id="add-mistake" type="button">加入错题本</button>
               <span id="tool-feedback" aria-live="polite"></span>
             </section>
 

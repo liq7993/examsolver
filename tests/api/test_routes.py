@@ -292,3 +292,13 @@ def test_frontend_static_shell_is_served() -> None:
     assert "函数图像" in html
     assert "buildPlotSvg" in script
     assert "renderPlot" in script
+    assert 'id="open-mistakes"' in html
+    assert 'id="mistakes-view"' in html
+    assert 'id="add-mistake"' in html
+    assert "错题本" in html
+    assert "loadMistakes" in script
+    assert "renderMistakes" in script
+    assert "addCurrentMistake" in script
+    assert "saveMistakeNote" in script
+    assert "/mistakes" in script
+    assert "/mistakes/export.md" in script

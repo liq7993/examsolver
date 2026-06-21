@@ -93,6 +93,24 @@ class StudentExplanation:
 
 
 @dataclass(frozen=True, slots=True)
+class PlotSeries:
+    """One labelled curve sampled as (x, y) points for deterministic plotting."""
+
+    label: str
+    points: tuple[tuple[float, float], ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class PlotData:
+    """Deterministic function plot derived from a solved result (no LLM)."""
+
+    title: str
+    x_label: str
+    y_label: str
+    series: tuple[PlotSeries, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
 class SolveResult:
     """Structured result returned by a skill before response formatting."""
 
@@ -104,6 +122,7 @@ class SolveResult:
     meta: dict[str, Any] = field(default_factory=dict)
     skill_version: str = ""
     citations: list[Citation] = field(default_factory=list)
+    plot: PlotData | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -142,6 +161,7 @@ class SolveResponse:
     fallback_reasons: list[str] = field(default_factory=list)
     diagnostics: dict[str, Any] = field(default_factory=dict)
     note: NoteEntry | None = None
+    plot: PlotData | None = None
 
 
 class ExplanationEnhancer(Protocol):

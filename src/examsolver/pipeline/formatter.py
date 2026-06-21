@@ -23,6 +23,7 @@ def format_response(question: NormalizedQuestion, result: SolveResult) -> SolveR
         message=message,
         student_explanation=result.student_explanation,
         citations=result.citations,
+        plot=result.plot,
     )
 
 

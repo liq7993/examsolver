@@ -127,6 +127,23 @@ def test_solve_route_delegates_to_service() -> None:
     assert response.note.steps[0].description
 
 
+def test_solve_route_returns_deterministic_function_plot() -> None:
+    response = solve_question(SolveRequestBody(question="求 x^2 对 x 的导数"))
+
+    assert response.plot is not None
+    assert response.plot.x_label == "x"
+    assert [series.label for series in response.plot.series] == ["f(x)", "f'(x)"]
+    assert len(response.plot.series[0].points) > 2
+
+
+def test_solve_route_has_no_plot_for_non_function_questions() -> None:
+    response = solve_question(
+        SolveRequestBody(question="计算矩阵 [[1,2],[3,4]] 乘以 [[5,6],[7,8]]")
+    )
+
+    assert response.plot is None
+
+
 def test_solve_history_and_get_solve_routes() -> None:
     solved = solve_question(SolveRequestBody(question="求 x^2 对 x 的导数"))
 
@@ -270,3 +287,8 @@ def test_frontend_static_shell_is_served() -> None:
     assert "renderProjectView" in script
     assert "/solve/capabilities" in script
     assert "data-subject" in script
+    assert 'id="plot-panel"' in html
+    assert 'id="plot-body"' in html
+    assert "函数图像" in html
+    assert "buildPlotSvg" in script
+    assert "renderPlot" in script

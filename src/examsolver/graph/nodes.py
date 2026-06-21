@@ -22,6 +22,7 @@ from examsolver.pipeline.formatter import format_response
 from examsolver.pipeline.normalizer import normalize
 from examsolver.rag import retriever as rag_retriever
 from examsolver.services.explanation import enhance_if_needed
+from examsolver.services.plot import attach_plot
 from examsolver.skills.base import PersistenceError
 from examsolver.skills.general import CotWithTextbookSkill
 from examsolver.skills.registry import get_skill, unknown_skill
@@ -274,6 +275,26 @@ def explanation_enhancer_node(state: SolveGraphState) -> SolveGraphState:
         "done has_explanation=%s",
         new_result.student_explanation is not None,
     )
+    return {"solve_result": new_result}
+
+
+def plot_node(state: SolveGraphState) -> SolveGraphState:
+    """Attach a deterministic function plot when the result is plottable.
+
+    Plotting is best-effort: any failure degrades honestly to no plot and never
+    breaks the solve pipeline.
+    """
+
+    normalized = state["normalized"]
+    request_id = str(normalized.hints.get("request_id", "unknown"))
+    result = state["solve_result"]
+    _log_info(request_id, "plot_node", "begin")
+    try:
+        new_result = attach_plot(result)
+    except Exception as exc:
+        _log_warning(request_id, "plot_node", "plot skipped: %s", exc)
+        return {}
+    _log_info(request_id, "plot_node", "done has_plot=%s", new_result.plot is not None)
     return {"solve_result": new_result}
 
 

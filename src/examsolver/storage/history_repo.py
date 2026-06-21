@@ -15,6 +15,8 @@ from examsolver.contracts import (
     FormulaCard,
     NormalizedQuestion,
     NoteEntry,
+    PlotData,
+    PlotSeries,
     SolveResponse,
     Step,
     StudentExplanation,
@@ -189,6 +191,35 @@ def _response_from_json(payload: str) -> SolveResponse:
         fallback_reasons=[str(reason) for reason in data.get("fallback_reasons", [])],
         diagnostics=dict(data.get("diagnostics", {})),
         note=_note_from_json(data.get("note")),
+        plot=_plot_from_json(data.get("plot")),
+    )
+
+
+def _plot_from_json(value: Any) -> PlotData | None:
+    if not isinstance(value, dict):
+        return None
+    series: list[PlotSeries] = []
+    raw_series = value.get("series")
+    if isinstance(raw_series, list):
+        for item in raw_series:
+            if not isinstance(item, dict):
+                continue
+            points: list[tuple[float, float]] = []
+            raw_points = item.get("points")
+            if isinstance(raw_points, list):
+                for pair in raw_points:
+                    if (
+                        isinstance(pair, (list, tuple))
+                        and len(pair) == 2
+                        and all(isinstance(coord, (int, float)) for coord in pair)
+                    ):
+                        points.append((float(pair[0]), float(pair[1])))
+            series.append(PlotSeries(label=str(item.get("label", "")), points=tuple(points)))
+    return PlotData(
+        title=str(value.get("title", "")),
+        x_label=str(value.get("x_label", "")),
+        y_label=str(value.get("y_label", "")),
+        series=tuple(series),
     )
 
 

@@ -48,6 +48,9 @@ const els = {
   answerText: document.querySelector("#answer-text"),
   stepsMeta: document.querySelector("#steps-meta"),
   stepsLayout: document.querySelector("#steps-layout"),
+  plotPanel: document.querySelector("#plot-panel"),
+  plotMeta: document.querySelector("#plot-meta"),
+  plotBody: document.querySelector("#plot-body"),
   formulasPanel: document.querySelector("#formulas-panel"),
   formulasMeta: document.querySelector("#formulas-meta"),
   formulaList: document.querySelector("#formula-list"),
@@ -420,6 +423,7 @@ function renderCurrentPage() {
   els.stepsMeta.textContent = `${steps.length} 步`;
   setStatus(solve.success ? "success" : "unsupported", solve.message);
   renderSteps(steps);
+  renderPlot(solve.plot);
   renderFormulas(extractLatexSegments(solve.answer, solve.steps, explanation));
   renderExplanation(explanation);
 }
@@ -450,6 +454,137 @@ function renderSteps(steps) {
       <div class="step-detail-body math">${renderMathText(steps[active])}</div>
     </div>
   `;
+}
+
+const PLOT_COLORS = ["#0a84ff", "#ff6a00", "#34c759", "#af52de"];
+
+// Split a sampled curve where the backend skipped points (e.g. across an
+// asymptote) so we never draw a spurious vertical line through a gap.
+function plotSegments(points) {
+  if (points.length < 2) return [];
+  const deltas = [];
+  for (let i = 1; i < points.length; i += 1) deltas.push(points[i][0] - points[i - 1][0]);
+  const sorted = [...deltas].sort((a, b) => a - b);
+  const median = sorted[Math.floor(sorted.length / 2)] || 0;
+  const threshold = median > 0 ? median * 2.5 : Infinity;
+  const segments = [];
+  let current = [points[0]];
+  for (let i = 1; i < points.length; i += 1) {
+    if (points[i][0] - points[i - 1][0] > threshold) {
+      if (current.length >= 2) segments.push(current);
+      current = [points[i]];
+    } else {
+      current.push(points[i]);
+    }
+  }
+  if (current.length >= 2) segments.push(current);
+  return segments;
+}
+
+function plotNumber(value) {
+  const rounded = Math.round(value * 100) / 100;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2);
+}
+
+function buildPlotSvg(plot) {
+  const series = plot.series;
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  series.forEach((line) =>
+    line.points.forEach(([x, y]) => {
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }),
+  );
+  if (!Number.isFinite(minX) || !Number.isFinite(minY)) return "";
+  if (minX === maxX) {
+    minX -= 1;
+    maxX += 1;
+  }
+  if (minY === maxY) {
+    minY -= 1;
+    maxY += 1;
+  }
+  const padY = (maxY - minY) * 0.08;
+  minY -= padY;
+  maxY += padY;
+
+  const width = 560;
+  const height = 360;
+  const ml = 48;
+  const mr = 18;
+  const mt = 18;
+  const mb = 34;
+  const iw = width - ml - mr;
+  const ih = height - mt - mb;
+  const sx = (x) => ml + ((x - minX) / (maxX - minX)) * iw;
+  const sy = (y) => mt + (1 - (y - minY) / (maxY - minY)) * ih;
+
+  const parts = [`<rect class="plot-frame" x="${ml}" y="${mt}" width="${iw}" height="${ih}" />`];
+  if (minY <= 0 && maxY >= 0) {
+    const y0 = sy(0).toFixed(1);
+    parts.push(`<line class="plot-axis" x1="${ml}" y1="${y0}" x2="${ml + iw}" y2="${y0}" />`);
+  }
+  if (minX <= 0 && maxX >= 0) {
+    const x0 = sx(0).toFixed(1);
+    parts.push(`<line class="plot-axis" x1="${x0}" y1="${mt}" x2="${x0}" y2="${mt + ih}" />`);
+  }
+  series.forEach((line, index) => {
+    const color = PLOT_COLORS[index % PLOT_COLORS.length];
+    plotSegments(line.points).forEach((segment) => {
+      const pts = segment.map(([x, y]) => `${sx(x).toFixed(1)},${sy(y).toFixed(1)}`).join(" ");
+      parts.push(`<polyline class="plot-curve" stroke="${color}" points="${pts}" />`);
+    });
+  });
+  parts.push(
+    `<text class="plot-tick" x="${ml}" y="${mt + ih + 18}" text-anchor="start">${escapeHtml(plotNumber(minX))}</text>`,
+    `<text class="plot-tick" x="${ml + iw}" y="${mt + ih + 18}" text-anchor="end">${escapeHtml(plotNumber(maxX))}</text>`,
+    `<text class="plot-tick" x="${ml - 6}" y="${mt + 10}" text-anchor="end">${escapeHtml(plotNumber(maxY))}</text>`,
+    `<text class="plot-tick" x="${ml - 6}" y="${mt + ih}" text-anchor="end">${escapeHtml(plotNumber(minY))}</text>`,
+    `<text class="plot-axis-name" x="${ml + iw}" y="${mt + ih + 30}" text-anchor="end">${escapeHtml(plot.x_label || "x")}</text>`,
+    `<text class="plot-axis-name" x="${ml - 6}" y="${mt - 4}" text-anchor="end">${escapeHtml(plot.y_label || "y")}</text>`,
+  );
+  const labelWidth = Math.max(...series.map((line) => String(line.label).length));
+  const legendW = 30 + labelWidth * 9;
+  const legendH = series.length * 18 + 8;
+  parts.push(
+    `<rect class="plot-legend-bg" x="${ml + 6}" y="${mt + 6}" width="${legendW}" height="${legendH}" rx="6" />`,
+  );
+  series.forEach((line, index) => {
+    const color = PLOT_COLORS[index % PLOT_COLORS.length];
+    const lx = ml + 14;
+    const ly = mt + 20 + index * 18;
+    parts.push(
+      `<rect x="${lx}" y="${ly - 9}" width="12" height="12" rx="2" fill="${color}" />` +
+        `<text class="plot-legend-text" x="${lx + 18}" y="${ly + 1}">${escapeHtml(line.label)}</text>`,
+    );
+  });
+
+  return (
+    `<svg class="plot-svg" viewBox="0 0 ${width} ${height}" role="img" ` +
+    `aria-label="${escapeHtml(plot.title || "函数图像")}" preserveAspectRatio="xMidYMid meet">` +
+    `${parts.join("")}</svg>`
+  );
+}
+
+function renderPlot(plot) {
+  const series =
+    plot && Array.isArray(plot.series)
+      ? plot.series.filter((line) => Array.isArray(line.points) && line.points.length >= 2)
+      : [];
+  if (!plot || !series.length) {
+    els.plotPanel.hidden = true;
+    els.plotBody.innerHTML = "";
+    els.plotMeta.textContent = "0 条曲线";
+    return;
+  }
+  els.plotPanel.hidden = false;
+  els.plotMeta.textContent = `${series.length} 条曲线`;
+  els.plotBody.innerHTML = buildPlotSvg({ ...plot, series });
 }
 
 function renderFormulas(formulas) {

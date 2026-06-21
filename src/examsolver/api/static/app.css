@@ -469,6 +469,62 @@ button {
   line-height: 1.2;
 }
 
+.plot-canvas {
+  width: 100%;
+  border-radius: 0.9rem;
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  padding: 8px;
+}
+
+.plot-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.plot-frame {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.plot-axis {
+  stroke: var(--text-2);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.plot-curve {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.plot-tick {
+  fill: var(--text-2);
+  font-size: 11px;
+}
+
+.plot-axis-name {
+  fill: var(--text-1);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.plot-legend-bg {
+  fill: var(--surface-1);
+  stroke: var(--line);
+  stroke-width: 1;
+  opacity: 0.92;
+}
+
+.plot-legend-text {
+  fill: var(--text-0);
+  font-size: 12px;
+}
+
 .problem-header {
   display: grid;
   gap: 8px;

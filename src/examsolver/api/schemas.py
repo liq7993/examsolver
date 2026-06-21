@@ -11,6 +11,8 @@ from examsolver.contracts import (
     Flashcard,
     FormulaCard,
     NoteEntry,
+    PlotData,
+    PlotSeries,
     SolveRequest,
     SolveResponse,
     Step,
@@ -153,6 +155,35 @@ class NoteEntryBody(BaseModel):
         )
 
 
+class PlotSeriesBody(BaseModel):
+    """One labelled curve as a list of [x, y] points."""
+
+    label: str
+    points: list[tuple[float, float]]
+
+    @classmethod
+    def from_contract(cls, series: PlotSeries) -> PlotSeriesBody:
+        return cls(label=series.label, points=[(x, y) for x, y in series.points])
+
+
+class PlotBody(BaseModel):
+    """Deterministic function plot for client-side SVG rendering."""
+
+    title: str
+    x_label: str
+    y_label: str
+    series: list[PlotSeriesBody]
+
+    @classmethod
+    def from_contract(cls, plot: PlotData) -> PlotBody:
+        return cls(
+            title=plot.title,
+            x_label=plot.x_label,
+            y_label=plot.y_label,
+            series=[PlotSeriesBody.from_contract(series) for series in plot.series],
+        )
+
+
 class SolveResponseBody(BaseModel):
     """HTTP response body for solve responses."""
 
@@ -169,6 +200,7 @@ class SolveResponseBody(BaseModel):
     fallback_reasons: list[str]
     diagnostics: dict[str, Any]
     note: NoteEntryBody | None
+    plot: PlotBody | None = None
 
     @classmethod
     def from_contract(cls, response: SolveResponse) -> SolveResponseBody:
@@ -191,6 +223,7 @@ class SolveResponseBody(BaseModel):
             fallback_reasons=response.fallback_reasons,
             diagnostics=response.diagnostics,
             note=NoteEntryBody.from_contract(response.note) if response.note is not None else None,
+            plot=PlotBody.from_contract(response.plot) if response.plot is not None else None,
         )
 
 

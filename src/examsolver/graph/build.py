@@ -19,6 +19,7 @@ from examsolver.graph.nodes import (
     note_builder_node,
     ocr_node,
     persist_node,
+    plot_node,
     rag_retrieve_node,
     route_after_rag,
     route_after_router_agent,
@@ -50,6 +51,7 @@ def build_graph() -> CompiledStateGraph[Any, Any, Any, Any]:
     graph.add_node("skill", skill_node)
     graph.add_node("general", general_node)
     graph.add_node("explanation_enhancer", explanation_enhancer_node)
+    graph.add_node("plot", plot_node)
     graph.add_node("note_builder", note_builder_node)
     graph.add_node("format", format_node)
     graph.add_node("persist", persist_node)
@@ -78,7 +80,8 @@ def build_graph() -> CompiledStateGraph[Any, Any, Any, Any]:
     )
     graph.add_edge("skill", "explanation_enhancer")
     graph.add_edge("general", "explanation_enhancer")
-    graph.add_edge("explanation_enhancer", "note_builder")
+    graph.add_edge("explanation_enhancer", "plot")
+    graph.add_edge("plot", "note_builder")
     graph.add_edge("note_builder", "format")
     graph.add_edge("format", "persist")
     graph.add_edge("persist", END)

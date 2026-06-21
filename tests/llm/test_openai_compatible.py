@@ -60,6 +60,40 @@ def test_client_without_key_sends_no_auth_header() -> None:
     assert "authorization" not in route.calls.last.request.headers
 
 
+@respx.mock
+def test_chat_degrades_when_provider_rejects_response_format() -> None:
+    # MiniMax-style: a ``response_format: json_schema`` request is rejected with
+    # 400, so the client retries once without the schema and succeeds on the
+    # prompt alone instead of failing the whole solve.
+    route = respx.post(CHAT_URL).mock(
+        side_effect=[
+            httpx.Response(400, json={"error": {"message": "response_format unsupported"}}),
+            _ok_response(),
+        ]
+    )
+    client = OpenAICompatibleClient(base_url=BASE_URL, model="cloud-model", api_key="sk")
+    schema = {"type": "object", "properties": {"answer": {"type": "string"}}}
+
+    result = client.chat([Message(role="user", content="ping")], json_schema=schema, timeout=1.0)
+
+    assert result == "pong"
+    assert route.call_count == 2
+    assert "response_format" in json.loads(route.calls[0].request.content)
+    assert "response_format" not in json.loads(route.calls[1].request.content)
+
+
+@respx.mock
+def test_chat_does_not_retry_on_non_400_status() -> None:
+    # A 4xx that is not 400 (e.g. 401 auth) must surface, not silently degrade.
+    route = respx.post(CHAT_URL).mock(return_value=httpx.Response(401, json={"error": "nope"}))
+    client = OpenAICompatibleClient(base_url=BASE_URL, model="cloud-model", api_key="sk")
+    schema = {"type": "object", "properties": {"answer": {"type": "string"}}}
+
+    with pytest.raises(httpx.HTTPStatusError):
+        client.chat([Message(role="user", content="ping")], json_schema=schema, timeout=1.0)
+    assert route.call_count == 1
+
+
 def test_local_gguf_is_an_openai_compatible_client_without_key() -> None:
     client = LocalGGUFClient(base_url=BASE_URL, model="local-model")
 

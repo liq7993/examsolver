@@ -43,6 +43,14 @@ _EXPRESSION_PATTERNS = (
 )
 _VARIABLE_PATTERN = re.compile(r"(?:对|关于)\s*([A-Za-z])\b")
 _CJK_PATTERN = re.compile(r"[一-鿿]")
+# A function definition like ``f(x)=...`` / ``函数 f(x)=...`` / ``s(t)=...`` names
+# both the differentiation variable (the parenthesised symbol) and the expression
+# (right of ``=``) -- the least ambiguous signal available. The expression capture
+# admits only math characters and whitespace, so it stops at the first CJK run
+# (e.g. a trailing ``的导数`` or ``求``).
+_FUNCTION_DEF_PATTERN = re.compile(
+    r"[A-Za-z]\s*\(\s*([A-Za-z])\s*\)\s*=\s*([A-Za-z0-9+\-*/^().\s]+)"
+)
 
 
 class DerivativeSkill:
@@ -58,7 +66,7 @@ class DerivativeSkill:
         return any(key in text for key in ("导数", "求导", "derivative", "d/dx"))
 
     def solve(self, question: NormalizedQuestion) -> SolveResult:
-        raw = _extract_expression(question.normalized_text)
+        raw, variable_hint = _extract(question.normalized_text)
         expression = _safe_parse(raw)
         if expression is None:
             raise SkillExecutionError(
@@ -66,7 +74,11 @@ class DerivativeSkill:
                 f"{question.normalized_text!r}"
             )
 
-        variable = _detect_variable(question.normalized_text, expression)
+        variable = (
+            sp.Symbol(variable_hint)
+            if variable_hint
+            else _detect_variable(question.normalized_text, expression)
+        )
         derivative = sp.diff(expression, variable)
 
         expr_latex = sp.latex(expression)
@@ -124,6 +136,39 @@ class DerivativeSkill:
                 "calculus.derivative.variable": str(variable),
             },
         )
+
+
+def _extract(text: str) -> tuple[str | None, str | None]:
+    """Return ``(expression, variable_hint)`` for the question.
+
+    A ``name(var)=expr`` function definition pins down both pieces unambiguously
+    and takes priority; otherwise fall back to keyword patterns that yield only
+    the expression (its variable is inferred later by ``_detect_variable``).
+    """
+
+    function_definition = _extract_function_definition(text)
+    if function_definition is not None:
+        return function_definition
+    return _extract_expression(text), None
+
+
+def _extract_function_definition(text: str) -> tuple[str, str] | None:
+    """Pull ``(expression, variable)`` out of ``f(x)=...`` style questions.
+
+    Covers ``求函数 f(x)=x^3-6x^2+9x 的导数`` and ``对 s(t)=2t^3-5t^2+3t 求 t 的导数``:
+    the parenthesised symbol is the differentiation variable and the run right of
+    ``=`` is the expression. Returning both together avoids the variable-vs-
+    expression mix-up bare keyword patterns fall into -- which previously made
+    ``对 s(t)=... 求 t 的导数`` resolve to a confident but wrong ``d/ds(t)=0``.
+    """
+
+    match = _FUNCTION_DEF_PATTERN.search(_strip_latex_markers(text))
+    if not match:
+        return None
+    expression = match.group(2).strip().strip("：:，,。.")
+    if not expression:
+        return None
+    return expression, match.group(1)
 
 
 def _extract_expression(text: str) -> str | None:

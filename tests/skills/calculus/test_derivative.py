@@ -46,6 +46,30 @@ def test_derivative_skill_applies_product_rule() -> None:
     assert "\\sin" in result.answer
 
 
+def test_derivative_skill_parses_function_definition_notation() -> None:
+    # ``函数 f(x)=...`` previously left CJK in the captured expression and was
+    # rejected; the function-definition path now strips the ``f(x)=`` wrapper.
+    question = normalize(SolveRequest(question="求函数 f(x)=x^3-6x^2+9x 的导数"))
+    result = DerivativeSkill().solve(question)
+
+    assert result.answer == (
+        "$\\frac{d}{dx}\\left(x^{3} - 6 x^{2} + 9 x\\right) = 3 x^{2} - 12 x + 9$"
+    )
+
+
+def test_derivative_skill_uses_parenthesised_variable_not_a_trailing_letter() -> None:
+    # Regression: ``对 s(t)=... 求 t 的导数`` used to mis-read the expression as
+    # ``t`` and the variable as ``s``, returning a confident but wrong d/ds(t)=0.
+    # The function-definition path pins the variable to ``t`` and the expression
+    # to the run right of ``=``.
+    question = normalize(SolveRequest(question="对 s(t)=2t^3-5t^2+3t 求 t 的导数"))
+    result = DerivativeSkill().solve(question)
+
+    assert result.answer == (
+        "$\\frac{d}{dt}\\left(2 t^{3} - 5 t^{2} + 3 t\\right) = 6 t^{2} - 10 t + 3$"
+    )
+
+
 def test_derivative_skill_declines_when_no_expression() -> None:
     # Honest degradation: no parseable expression -> raise so the graph falls back
     # to the general/unknown path instead of fabricating an answer.

@@ -75,7 +75,26 @@ class OpenAICompatibleClient:
                 },
             }
 
-        data = self._post(payload, timeout=timeout)
+        try:
+            data = self._post(payload, timeout=timeout)
+        except httpx.HTTPStatusError as exc:
+            # Not every OpenAI-compatible provider supports
+            # ``response_format: json_schema``. MiniMax, for instance, rejects
+            # complex schemas with 400 (and even wraps the output under the
+            # schema name when it does accept a simple one). Degrade once to a
+            # plain request and lean on the prompt plus the caller's tolerant
+            # JSON parsing, so structured output stays best-effort across
+            # providers instead of hard-failing the whole solve.
+            if json_schema is None or exc.response.status_code != 400:
+                raise
+            logger.warning(
+                "[unknown] WARNING llm.%s.chat: response_format rejected (400), "
+                "retrying without schema task_kind=%s",
+                self.provider_label,
+                self.task_kind,
+            )
+            payload.pop("response_format", None)
+            data = self._post(payload, timeout=timeout)
         return _message_content(data)
 
     def chat_with_image(

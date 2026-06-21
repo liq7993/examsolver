@@ -11,6 +11,7 @@ from examsolver.storage.mistakes_repo import (
     delete_mistake,
     export_mistakes_markdown,
     list_mistakes,
+    record_review,
     update_user_note,
 )
 
@@ -40,9 +41,28 @@ def test_mistakes_repo_crud_flow() -> None:
     assert list_mistakes() == []
 
 
+def test_record_review_bumps_count_and_stamps_time() -> None:
+    response = _save_solve("求 x^2 对 x 的导数")
+    created = add_mistake_for_solve(response.solve_id)
+    assert created is not None
+    assert created.review_count == 0
+    assert created.last_review is None
+
+    reviewed = record_review(created.id)
+    assert reviewed is not None
+    assert reviewed.review_count == 1
+    assert reviewed.last_review is not None
+
+    reviewed_again = record_review(created.id)
+    assert reviewed_again is not None
+    assert reviewed_again.review_count == 2
+    assert list_mistakes()[0].review_count == 2
+
+
 def test_mistakes_repo_missing_rows_return_none_or_false() -> None:
     assert add_mistake_for_solve("missing") is None
     assert update_user_note("missing", "note") is None
+    assert record_review("missing") is None
     assert delete_mistake("missing") is False
 
 

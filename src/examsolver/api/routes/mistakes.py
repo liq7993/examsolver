@@ -30,6 +30,14 @@ def patch_mistake(mistake_id: str, body: UpdateMistakeRequestBody) -> MistakeEnt
     return MistakeEntryBody.from_repo(entry)
 
 
+@router.post("/mistakes/{mistake_id}/review", response_model=MistakeEntryBody)
+def review_mistake(mistake_id: str) -> MistakeEntryBody:
+    entry = repo_call(repo.record_review, mistake_id)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="mistake_id not found")
+    return MistakeEntryBody.from_repo(entry)
+
+
 @router.delete("/mistakes/{mistake_id}")
 def remove_mistake(mistake_id: str) -> dict[str, bool]:
     if not repo_call(repo.delete_mistake, mistake_id):

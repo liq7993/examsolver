@@ -300,5 +300,8 @@ def test_frontend_static_shell_is_served() -> None:
     assert "renderMistakes" in script
     assert "addCurrentMistake" in script
     assert "saveMistakeNote" in script
+    assert "reviewMistake" in script
+    assert "data-review-mistake" in script
+    assert "/review" in script
     assert "/mistakes" in script
     assert "/mistakes/export.md" in script

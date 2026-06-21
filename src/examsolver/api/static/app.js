@@ -834,6 +834,12 @@ async function loadMistakes() {
   renderMistakes();
 }
 
+function mistakeMetaText(item) {
+  const reviewCount = Number(item.review_count) || 0;
+  const last = item.last_review ? `上次复习 ${formatTime(item.last_review)}` : "未复习";
+  return `加入 ${formatTime(item.created_at)} · 复习 ${reviewCount} 次 · ${last}`;
+}
+
 function renderMistakes() {
   const items = state.mistakes;
   els.mistakesSub.textContent = items.length ? `${items.length} 道错题` : "";
@@ -853,13 +859,14 @@ function renderMistakes() {
             data-question-snippet="错题回顾"
           >
             <strong>${escapeHtml(localize(labels.subject, item.subject))} · ${escapeHtml(localize(labels.type, item.question_type))}</strong>
-            <span>${escapeHtml(formatTime(item.created_at))} · 复习 ${Number(item.review_count) || 0} 次</span>
+            <span data-mistake-meta>${escapeHtml(mistakeMetaText(item))}</span>
           </button>
           <label class="mistake-note-field">
             <span>错因笔记</span>
             <textarea class="mistake-note" data-mistake-note spellcheck="false" placeholder="写下错因或思路…">${escapeHtml(item.user_note || "")}</textarea>
           </label>
           <div class="mistake-actions">
+            <button type="button" data-review-mistake>复习一次</button>
             <button type="button" data-save-note>保存笔记</button>
             <button type="button" data-delete-mistake>删除</button>
             <span class="mistake-feedback" data-mistake-feedback></span>
@@ -919,6 +926,29 @@ async function saveMistakeNote(mistakeId, note, feedback) {
     if (feedback) feedback.textContent = "已保存";
   } catch (error) {
     if (feedback) feedback.textContent = error.message || "保存失败";
+  } finally {
+    if (feedback) {
+      window.setTimeout(() => {
+        feedback.textContent = "";
+      }, 1600);
+    }
+  }
+}
+
+async function reviewMistake(mistakeId, feedback) {
+  try {
+    const response = await fetch(`/mistakes/${encodeURIComponent(mistakeId)}/review`, {
+      method: "POST",
+    });
+    if (!response.ok) throw new Error("打卡失败");
+    const updated = await response.json();
+    state.mistakes = state.mistakes.map((item) => (item.id === mistakeId ? updated : item));
+    const article = els.mistakesList.querySelector(`[data-mistake-id="${CSS.escape(mistakeId)}"]`);
+    const meta = article ? article.querySelector("[data-mistake-meta]") : null;
+    if (meta) meta.textContent = mistakeMetaText(updated);
+    if (feedback) feedback.textContent = "已记录复习";
+  } catch (error) {
+    if (feedback) feedback.textContent = error.message || "打卡失败";
   } finally {
     if (feedback) {
       window.setTimeout(() => {
@@ -1275,6 +1305,13 @@ els.mistakesList.addEventListener("click", (event) => {
       openButton.getAttribute("data-solve-id"),
       openButton.getAttribute("data-question-snippet") || "错题回顾",
     );
+    return;
+  }
+  const reviewButton = event.target.closest("[data-review-mistake]");
+  if (reviewButton) {
+    const item = reviewButton.closest("[data-mistake-id]");
+    const feedback = item.querySelector("[data-mistake-feedback]");
+    reviewMistake(item.getAttribute("data-mistake-id"), feedback);
     return;
   }
   const saveButton = event.target.closest("[data-save-note]");

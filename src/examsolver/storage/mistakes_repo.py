@@ -142,6 +142,35 @@ def update_user_note(
     return _entry_from_row(row) if row is not None else None
 
 
+def record_review(mistake_id: str, *, db_path: Path | None = None) -> MistakeEntry | None:
+    """Mark one mistake as reviewed: bump review_count and stamp last_review."""
+
+    reviewed_at = datetime.now(UTC).isoformat()
+    try:
+        with connect(db_path) as connection:
+            cursor = connection.execute(
+                """
+                UPDATE mistakes
+                SET review_count = review_count + 1, last_review = ?
+                WHERE id = ?
+                """,
+                (reviewed_at, mistake_id),
+            )
+            if cursor.rowcount == 0:
+                return None
+            row = connection.execute(
+                """
+                SELECT id, solve_id, subject, question_type, user_note,
+                       review_count, last_review, created_at
+                FROM mistakes WHERE id = ?
+                """,
+                (mistake_id,),
+            ).fetchone()
+    except (sqlite3.Error, OSError) as exc:
+        raise PersistenceError("failed to record review") from exc
+    return _entry_from_row(row) if row is not None else None
+
+
 def delete_mistake(mistake_id: str, *, db_path: Path | None = None) -> bool:
     """Delete one mistake row."""
 

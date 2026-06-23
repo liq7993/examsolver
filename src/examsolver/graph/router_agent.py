@@ -184,16 +184,6 @@ def _decision_from_payload(payload: dict[str, Any]) -> RouteDecision | None:
     )
 
 
-def _unknown(reasoning: str, fallback_reasons: tuple[str, ...]) -> RouteDecision:
-    return RouteDecision(
-        subject="general",
-        question_type="unknown",
-        confidence=0.0,
-        reasoning=reasoning,
-        fallback_reasons=fallback_reasons,
-    )
-
-
 def _unknown_for_question(
     question: NormalizedQuestion,
     reasoning: str,

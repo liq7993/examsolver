@@ -21,6 +21,11 @@ from examsolver.llm.base import Message
 
 logger = logging.getLogger(__name__)
 
+# The ``name`` we give the json_schema response_format. Some providers (MiniMax)
+# echo the structured result nested under this name, so we unwrap it by the same
+# constant on the way out -- keep the two uses in sync.
+_SCHEMA_NAME = "structured_output"
+
 
 class OpenAICompatibleClient:
     """Synchronous OpenAI-compatible chat client.
@@ -69,7 +74,7 @@ class OpenAICompatibleClient:
             payload["response_format"] = {
                 "type": "json_schema",
                 "json_schema": {
-                    "name": "structured_output",
+                    "name": _SCHEMA_NAME,
                     "schema": json_schema,
                     "strict": True,
                 },
@@ -95,7 +100,10 @@ class OpenAICompatibleClient:
             )
             payload.pop("response_format", None)
             data = self._post(payload, timeout=timeout)
-        return _message_content(data)
+        content = _message_content(data)
+        if json_schema is not None:
+            content = _unwrap_structured_output(content)
+        return content
 
     def chat_with_image(
         self,
@@ -180,3 +188,22 @@ def _message_content(data: dict[str, Any]) -> str:
     if isinstance(content, str):
         return content
     return json.dumps(content, ensure_ascii=False)
+
+
+def _unwrap_structured_output(content: str) -> str:
+    """Peel MiniMax's ``{"structured_output": {...}}`` envelope when present.
+
+    With ``response_format: json_schema`` some providers (MiniMax) return the
+    result nested under the schema ``name`` we sent instead of at the top level,
+    which makes every caller's tolerant JSON parsing miss the payload. We unwrap
+    exactly that single-key envelope so structured output is uniform across
+    providers. Best-effort: anything we cannot parse is returned unchanged.
+    """
+
+    try:
+        parsed = json.loads(content)
+    except (json.JSONDecodeError, TypeError):
+        return content
+    if isinstance(parsed, dict) and set(parsed) == {_SCHEMA_NAME}:
+        return json.dumps(parsed[_SCHEMA_NAME], ensure_ascii=False)
+    return content

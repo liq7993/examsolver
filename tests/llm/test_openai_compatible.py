@@ -83,6 +83,37 @@ def test_chat_degrades_when_provider_rejects_response_format() -> None:
 
 
 @respx.mock
+def test_chat_unwraps_structured_output_envelope() -> None:
+    # MiniMax echoes json_schema results nested under the schema name we send;
+    # the client must peel that single-key envelope so callers see the bare object.
+    wrapped = json.dumps({"structured_output": {"flashcards": [1, 2]}}, ensure_ascii=False)
+    respx.post(CHAT_URL).mock(
+        return_value=httpx.Response(200, json={"choices": [{"message": {"content": wrapped}}]})
+    )
+    client = OpenAICompatibleClient(base_url=BASE_URL, model="cloud-model", api_key="sk")
+    schema = {"type": "object", "properties": {"flashcards": {"type": "array"}}}
+
+    result = client.chat([Message(role="user", content="ping")], json_schema=schema, timeout=1.0)
+
+    assert json.loads(result) == {"flashcards": [1, 2]}
+
+
+@respx.mock
+def test_chat_leaves_bare_structured_output_untouched() -> None:
+    # Providers that already return the bare object must pass through unchanged.
+    bare = json.dumps({"flashcards": [1, 2]}, ensure_ascii=False)
+    respx.post(CHAT_URL).mock(
+        return_value=httpx.Response(200, json={"choices": [{"message": {"content": bare}}]})
+    )
+    client = OpenAICompatibleClient(base_url=BASE_URL, model="cloud-model", api_key="sk")
+    schema = {"type": "object", "properties": {"flashcards": {"type": "array"}}}
+
+    result = client.chat([Message(role="user", content="ping")], json_schema=schema, timeout=1.0)
+
+    assert json.loads(result) == {"flashcards": [1, 2]}
+
+
+@respx.mock
 def test_chat_does_not_retry_on_non_400_status() -> None:
     # A 4xx that is not 400 (e.g. 401 auth) must surface, not silently degrade.
     route = respx.post(CHAT_URL).mock(return_value=httpx.Response(401, json={"error": "nope"}))

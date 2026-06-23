@@ -65,6 +65,9 @@ const els = {
   formulaList: document.querySelector("#formula-list"),
   explanationPanel: document.querySelector("#explanation-panel"),
   explanationGrid: document.querySelector("#explanation-grid"),
+  flashcardsPanel: document.querySelector("#flashcards-panel"),
+  flashcardsMeta: document.querySelector("#flashcards-meta"),
+  flashcardList: document.querySelector("#flashcard-list"),
   history: document.querySelector("#history-list"),
   newThread: document.querySelector("#new-thread"),
   openSettings: document.querySelector("#open-settings"),
@@ -443,6 +446,7 @@ function renderCurrentPage() {
   renderPlot(solve.plot);
   renderFormulas(extractLatexSegments(solve.answer, solve.steps, explanation));
   renderExplanation(explanation);
+  renderFlashcards(page);
 }
 
 function renderSteps(steps) {
@@ -663,6 +667,66 @@ function renderExplanation(explanation) {
     .join("");
 }
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const CARD_TYPE_LABELS = { formula: "公式", concept: "概念", trap: "易错" };
+
+function renderFlashcards(page) {
+  const note = page && page.solve ? page.solve.note : null;
+  const cards = note && Array.isArray(note.flashcards) ? note.flashcards : [];
+  if (cards.length) {
+    els.flashcardsPanel.hidden = false;
+    els.flashcardsMeta.textContent = `${cards.length} 张 · 点击翻面`;
+    els.flashcardList.innerHTML = cards
+      .map(
+        (card) => `
+          <button type="button" class="flashcard" data-flipped="false">
+            <span class="flashcard-type">${escapeHtml(CARD_TYPE_LABELS[card.card_type] || card.card_type || "")}</span>
+            <span class="flashcard-face flashcard-front math">${renderMathText(card.front || "")}</span>
+            <span class="flashcard-face flashcard-back math" hidden>${renderMathText(card.back || "")}</span>
+          </button>
+        `,
+      )
+      .join("");
+    return;
+  }
+  if (page && page.flashcardsPending) {
+    els.flashcardsPanel.hidden = false;
+    els.flashcardsMeta.textContent = "生成中…";
+    els.flashcardList.innerHTML = '<p class="muted">复习卡正在后台生成，稍候自动出现…</p>';
+    return;
+  }
+  els.flashcardsPanel.hidden = true;
+  els.flashcardList.innerHTML = "";
+}
+
+async function pollFlashcards(page) {
+  if (!page.solve || !page.solve.solve_id) {
+    page.flashcardsPending = false;
+    return;
+  }
+  const solveId = page.solve.solve_id;
+  for (let attempt = 0; attempt < 12 && page.flashcardsPending; attempt += 1) {
+    await sleep(3000);
+    try {
+      const response = await fetch(`/solve/${encodeURIComponent(solveId)}`, { cache: "no-store" });
+      if (!response.ok) continue;
+      const payload = await response.json();
+      const cards = payload.note ? payload.note.flashcards : null;
+      if (Array.isArray(cards) && cards.length) {
+        page.solve = payload;
+        page.flashcardsPending = false;
+        if (currentPage() === page) renderFlashcards(page);
+        return;
+      }
+    } catch (error) {
+      // best-effort: keep polling until cards land or attempts run out
+    }
+  }
+  page.flashcardsPending = false;
+  if (currentPage() === page) renderFlashcards(page);
+}
+
 async function solveQuestion(question) {
   const trimmed = question.trim();
   if (!trimmed || state.busy) return;
@@ -684,10 +748,16 @@ async function solveQuestion(question) {
     });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.detail || "请求失败");
-    state.pages.push({ question: trimmed, solve: payload, createdAt: new Date().toISOString() });
+    const page = { question: trimmed, solve: payload, createdAt: new Date().toISOString() };
+    const note = payload.note;
+    if (payload.solve_id && note && (!Array.isArray(note.flashcards) || !note.flashcards.length)) {
+      page.flashcardsPending = true;
+    }
+    state.pages.push(page);
     state.currentIndex = state.pages.length - 1;
     state.activeStepIndex = 0;
     renderCurrentPage();
+    if (page.flashcardsPending) pollFlashcards(page);
     await refreshHistory();
   } catch (error) {
     els.pageFlash.hidden = false;
@@ -1203,6 +1273,17 @@ els.formulaList.addEventListener("input", (event) => {
   preview.innerHTML = renderLatex(editor.value);
   const source = item.querySelector("[data-formula-source]");
   source.textContent = editor.value;
+});
+
+els.flashcardList.addEventListener("click", (event) => {
+  const card = event.target.closest(".flashcard");
+  if (!card) return;
+  const nowFlipped = card.getAttribute("data-flipped") !== "true";
+  card.setAttribute("data-flipped", String(nowFlipped));
+  const front = card.querySelector(".flashcard-front");
+  const back = card.querySelector(".flashcard-back");
+  if (front) front.hidden = nowFlipped;
+  if (back) back.hidden = !nowFlipped;
 });
 
 els.pagePrev.addEventListener("click", () => goToPage(-1));

@@ -944,6 +944,46 @@ button {
   line-height: 1.65;
 }
 
+.flashcard-list {
+  display: grid;
+  gap: 10px;
+}
+
+.flashcard {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-1);
+  box-shadow: var(--shadow-soft);
+  cursor: pointer;
+  font: inherit;
+  color: var(--text-0);
+}
+
+.flashcard:hover {
+  border-color: var(--accent);
+}
+
+.flashcard-type {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--accent-2);
+}
+
+.flashcard-face {
+  display: block;
+  line-height: 1.6;
+}
+
+.flashcard-back {
+  color: var(--text-1);
+}
+
 .composer-bar {
   flex-shrink: 0;
   padding: 10px 24px 18px;

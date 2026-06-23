@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import HTTPException
+from fastapi import BackgroundTasks, HTTPException
 
 from examsolver.api.routes.mistakes import (
     add_mistake,
@@ -15,7 +15,7 @@ from examsolver.api.schemas import AddMistakeRequestBody, SolveRequestBody, Upda
 
 
 def test_mistakes_api_crud_flow() -> None:
-    solved = solve_question(SolveRequestBody(question="求 x^2 对 x 的导数"))
+    solved = solve_question(SolveRequestBody(question="求 x^2 对 x 的导数"), BackgroundTasks())
 
     created = add_mistake(
         AddMistakeRequestBody(solve_id=solved.solve_id, user_note="答案忘记化简")
@@ -42,7 +42,7 @@ def test_mistakes_api_crud_flow() -> None:
 
 
 def test_mistakes_api_review_bumps_count_and_stamps_time() -> None:
-    solved = solve_question(SolveRequestBody(question="求 x^2 对 x 的导数"))
+    solved = solve_question(SolveRequestBody(question="求 x^2 对 x 的导数"), BackgroundTasks())
     created = add_mistake(AddMistakeRequestBody(solve_id=solved.solve_id))
     assert created.review_count == 0
     assert created.last_review is None

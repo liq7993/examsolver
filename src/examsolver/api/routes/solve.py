@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, BackgroundTasks, File, HTTPException, Query, UploadFile
 
 from examsolver.api.schemas import (
     HistoryPageBody,
@@ -10,7 +10,7 @@ from examsolver.api.schemas import (
     SolveResponseBody,
     UploadedImageBody,
 )
-from examsolver.services.solve_service import solve
+from examsolver.services.solve_service import generate_flashcards_for_solve, solve
 from examsolver.storage.history_repo import get_response, list_history
 from examsolver.storage.uploads import InvalidImageUpload, store_image_upload
 
@@ -32,10 +32,19 @@ async def upload_solve_image(file: UploadFile = File(...)) -> UploadedImageBody:
 
 
 @router.post("/solve", response_model=SolveResponseBody)
-def solve_question(body: SolveRequestBody) -> SolveResponseBody:
-    """Validate HTTP input, call the service layer, and return the response."""
+def solve_question(
+    body: SolveRequestBody,
+    background_tasks: BackgroundTasks,
+) -> SolveResponseBody:
+    """Solve synchronously, then kick flashcard generation to the background.
+
+    The deterministic answer plus the local explanation return immediately; the
+    slow flashcard cloud call runs after the response via a background task, so
+    /solve stays fast and the cards land on the note in time for the next view.
+    """
 
     response = solve(body.to_contract())
+    background_tasks.add_task(generate_flashcards_for_solve, response.solve_id)
     return SolveResponseBody.from_contract(response)
 
 
@@ -51,7 +60,7 @@ def solve_history(
 
 @router.get("/solve/{solve_id}", response_model=SolveResponseBody)
 def get_solve(solve_id: str) -> SolveResponseBody:
-    """Return one stored solve response by solve_id."""
+    """Return one stored solve response by solve_id (never blocks on flashcards)."""
 
     response = get_response(solve_id)
     if response is None:

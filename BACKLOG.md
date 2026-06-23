@@ -470,6 +470,7 @@
 - [x] 在 `note_builder_node` 调用
 - [x] LLM prompt 模板 `notes/prompts/flashcard_extract.zh.md`
 - [x] 每个 note 至少出 2 张卡
+- ⚠️ **变更（2026-06-23）**：卡片移出 `note_builder_node`/`/solve` 热路径（实测 /solve 13s→0.07s）；改为 POST /solve 后经 FastAPI BackgroundTask 调 `solve_service.generate_flashcards_for_solve` **后台异步生成** + `history_repo.update_note_flashcards` 落库，下次查看即就绪、`GET /solve/{id}` 永不阻塞。验证门"smoke 后 ≥2 张"调整为"后台生成完成后 note 上 ≥2 张"。注：产品前端已切到 `:8000` 内置 UI（Next.js `frontend/` 已删除），`:8000` 暂无卡片显示——卡片已生成未展示，见记忆 examsolver-canonical-frontend。
 
 ### ✅ M5-08 · Flashcard 前端 + session
 **估时**：3 h

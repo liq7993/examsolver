@@ -171,6 +171,41 @@ def get_snapshot(solve_id: str, *, db_path: Path | None = None) -> SolveSnapshot
     )
 
 
+def update_note_flashcards(
+    solve_id: str,
+    flashcards: list[Flashcard],
+    *,
+    db_path: Path | None = None,
+) -> bool:
+    """Persist lazily generated flashcards back onto a stored solve note.
+
+    Rewrites only the note's ``flashcards`` field at the raw-JSON level so the
+    rest of the stored snapshot is preserved. Returns False when the solve_id is
+    unknown or its snapshot carries no note to attach cards to.
+    """
+
+    try:
+        with connect(db_path) as connection:
+            row = connection.execute(
+                "SELECT response_json FROM solve_history WHERE solve_id = ?",
+                (solve_id,),
+            ).fetchone()
+            if row is None:
+                return False
+            data = json.loads(str(row["response_json"]))
+            note = data.get("note")
+            if not isinstance(note, dict):
+                return False
+            note["flashcards"] = [asdict(card) for card in flashcards]
+            connection.execute(
+                "UPDATE solve_history SET response_json = ? WHERE solve_id = ?",
+                (json.dumps(data, ensure_ascii=False, default=_json_default), solve_id),
+            )
+    except (sqlite3.Error, OSError) as exc:
+        raise PersistenceError("failed to update note flashcards") from exc
+    return True
+
+
 def _response_from_json(payload: str) -> SolveResponse:
     data = json.loads(payload)
     explanation_data = data.get("student_explanation")

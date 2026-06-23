@@ -4,8 +4,14 @@ from typing import Any, cast
 
 import pytest
 
-from examsolver.contracts import NormalizedQuestion, SolveRequest, SolveResult, StudentExplanation
-from examsolver.services.solve_service import solve
+from examsolver.contracts import (
+    Flashcard,
+    NormalizedQuestion,
+    SolveRequest,
+    SolveResult,
+    StudentExplanation,
+)
+from examsolver.services.solve_service import generate_flashcards_for_solve, solve
 from examsolver.storage.history_repo import get_response, list_history
 
 FORCE_FIXTURE_PATH = Path(__file__).parents[1] / "fixtures" / "force_balance_regression.json"
@@ -46,6 +52,65 @@ def test_solve_service_returns_derivative_response() -> None:
     stored = get_response(response.solve_id)
     assert stored is not None
     assert stored.answer == response.answer
+
+
+def test_solve_keeps_flashcards_off_the_hot_path() -> None:
+    response = solve(SolveRequest(question="求 x^2 对 x 的导数"))
+
+    assert response.note is not None
+    assert response.note.flashcards == []
+
+
+def test_generate_flashcards_for_solve_persists_and_is_idempotent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    response = solve(SolveRequest(question="求 x^2 对 x 的导数"))
+    assert response.note is not None
+    assert response.note.flashcards == []
+
+    cards = [
+        Flashcard(front="d/dx x^2?", back="2x", card_type="formula"),
+        Flashcard(front="幂法则?", back="n x^(n-1)", card_type="concept"),
+    ]
+    calls = {"count": 0}
+
+    def fake_generate(_note: object, *, llm: object) -> list[Flashcard]:
+        calls["count"] += 1
+        return cards
+
+    monkeypatch.setattr("examsolver.services.solve_service.pick_llm", lambda *_a, **_k: None)
+    monkeypatch.setattr("examsolver.services.solve_service.generate_flashcards", fake_generate)
+
+    generate_flashcards_for_solve(response.solve_id)
+    stored = get_response(response.solve_id)
+    assert stored is not None
+    assert stored.note is not None
+    assert [card.front for card in stored.note.flashcards] == ["d/dx x^2?", "幂法则?"]
+    assert calls["count"] == 1
+
+    # Cards already present -> a second run is a no-op, not a regeneration.
+    generate_flashcards_for_solve(response.solve_id)
+    assert calls["count"] == 1
+
+
+def test_generate_flashcards_for_solve_is_best_effort_when_nothing_generated(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    response = solve(SolveRequest(question="求 x^2 对 x 的导数"))
+
+    # pick_llm -> None makes the real best-effort generator return [] without a key.
+    monkeypatch.setattr("examsolver.services.solve_service.pick_llm", lambda *_a, **_k: None)
+
+    generate_flashcards_for_solve(response.solve_id)  # must not raise
+
+    stored = get_response(response.solve_id)
+    assert stored is not None
+    assert stored.note is not None
+    assert stored.note.flashcards == []
+
+
+def test_generate_flashcards_for_solve_unknown_id_is_noop() -> None:
+    generate_flashcards_for_solve("missing")  # must not raise
 
 
 def test_solve_service_unknown_is_not_exception(monkeypatch: pytest.MonkeyPatch) -> None:

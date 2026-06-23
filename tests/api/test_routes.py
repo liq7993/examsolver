@@ -1,11 +1,13 @@
 from pathlib import Path
 
-from fastapi import HTTPException
+from fastapi import BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.testclient import TestClient
 from pytest import MonkeyPatch
 from starlette.responses import Response
 
 from examsolver.api.app import STATIC_DIR, create_app
+from examsolver.contracts import Flashcard
 from examsolver.api.routes.capabilities import capabilities
 from examsolver.api.routes.export import export_docx, export_markdown, export_pdf
 from examsolver.api.routes.health import health, info, ready
@@ -116,7 +118,7 @@ def test_llm_status_route_reports_local_gemma_configuration(
 
 
 def test_solve_route_delegates_to_service() -> None:
-    response = solve_question(SolveRequestBody(question="求 x^2 对 x 的导数"))
+    response = solve_question(SolveRequestBody(question="求 x^2 对 x 的导数"), BackgroundTasks())
 
     assert response.success is True
     assert response.question_type == "derivative"
@@ -128,7 +130,7 @@ def test_solve_route_delegates_to_service() -> None:
 
 
 def test_solve_route_returns_deterministic_function_plot() -> None:
-    response = solve_question(SolveRequestBody(question="求 x^2 对 x 的导数"))
+    response = solve_question(SolveRequestBody(question="求 x^2 对 x 的导数"), BackgroundTasks())
 
     assert response.plot is not None
     assert response.plot.x_label == "x"
@@ -138,14 +140,15 @@ def test_solve_route_returns_deterministic_function_plot() -> None:
 
 def test_solve_route_has_no_plot_for_non_function_questions() -> None:
     response = solve_question(
-        SolveRequestBody(question="计算矩阵 [[1,2],[3,4]] 乘以 [[5,6],[7,8]]")
+        SolveRequestBody(question="计算矩阵 [[1,2],[3,4]] 乘以 [[5,6],[7,8]]"),
+        BackgroundTasks(),
     )
 
     assert response.plot is None
 
 
 def test_solve_history_and_get_solve_routes() -> None:
-    solved = solve_question(SolveRequestBody(question="求 x^2 对 x 的导数"))
+    solved = solve_question(SolveRequestBody(question="求 x^2 对 x 的导数"), BackgroundTasks())
 
     page = solve_history(limit=10, offset=0)
     assert len(page.items) == 1
@@ -155,8 +158,31 @@ def test_solve_history_and_get_solve_routes() -> None:
     assert stored.answer == solved.answer
 
 
+def test_solve_route_runs_flashcards_in_the_background(monkeypatch: MonkeyPatch) -> None:
+    cards = [
+        Flashcard(front="d/dx x^2?", back="2x", card_type="formula"),
+        Flashcard(front="幂法则?", back="n x^(n-1)", card_type="concept"),
+    ]
+    monkeypatch.setattr("examsolver.services.solve_service.pick_llm", lambda *_a, **_k: None)
+    monkeypatch.setattr(
+        "examsolver.services.solve_service.generate_flashcards",
+        lambda _note, *, llm: cards,
+    )
+    client = TestClient(create_app())
+
+    posted = client.post("/solve", json={"question": "求 x^2 对 x 的导数"})
+    assert posted.status_code == 200
+    body = posted.json()
+    assert body["note"]["flashcards"] == []  # kept off the hot path
+
+    # TestClient runs background tasks after the response, so cards are persisted now.
+    fetched = client.get(f"/solve/{body['solve_id']}")
+    assert fetched.status_code == 200
+    assert [c["front"] for c in fetched.json()["note"]["flashcards"]] == ["d/dx x^2?", "幂法则?"]
+
+
 def test_export_markdown_route_returns_stored_solve_artifact() -> None:
-    solved = solve_question(SolveRequestBody(question="求 x^2 对 x 的导数"))
+    solved = solve_question(SolveRequestBody(question="求 x^2 对 x 的导数"), BackgroundTasks())
 
     response = export_markdown(solved.solve_id)
 
@@ -178,7 +204,7 @@ def test_export_markdown_route_raises_404_for_missing_id() -> None:
 
 
 def test_export_docx_route_returns_editable_word_file() -> None:
-    solved = solve_question(SolveRequestBody(question="求 x^2 对 x 的导数"))
+    solved = solve_question(SolveRequestBody(question="求 x^2 对 x 的导数"), BackgroundTasks())
 
     response = export_docx(solved.solve_id)
 
@@ -200,7 +226,7 @@ def test_export_docx_route_raises_404_for_missing_id() -> None:
 
 
 def test_export_pdf_route_returns_print_quality_pdf() -> None:
-    solved = solve_question(SolveRequestBody(question="求 x^2 对 x 的导数"))
+    solved = solve_question(SolveRequestBody(question="求 x^2 对 x 的导数"), BackgroundTasks())
 
     response = export_pdf(solved.solve_id)
 

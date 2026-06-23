@@ -15,7 +15,6 @@ from examsolver.multimodal import OCRError, VLMError
 from examsolver.multimodal.fallback import check_cloud_reachable
 from examsolver.multimodal.ocr_paddle import recognize
 from examsolver.multimodal.vlm_claude import describe as describe_images
-from examsolver.notes.flashcard import generate_flashcards
 from examsolver.notes.note_builder import build_note
 from examsolver.pipeline.dispatcher import dispatch
 from examsolver.pipeline.formatter import format_response
@@ -308,12 +307,6 @@ def note_builder_node(state: SolveGraphState) -> SolveGraphState:
         build_note(state["solve_result"], normalized),
         subject=state.get("subject", normalized.subject),
     )
-    try:
-        flashcards = generate_flashcards(note, llm=pick_llm("synthesize", needs_vision=False))
-    except Exception as exc:
-        _log_warning(request_id, "note_builder_node", "flashcards skipped: %s", exc)
-        flashcards = []
-    note = replace(note, flashcards=flashcards)
     _log_info(request_id, "note_builder_node", "done title=%s", note.title)
     return {"note": note}
 

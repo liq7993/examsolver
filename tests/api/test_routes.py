@@ -269,9 +269,9 @@ def test_frontend_static_shell_is_served() -> None:
     assert "ExamSolver" in html
     assert "单题求解工作台" in html
     assert 'href="/static/vendor/katex/katex.min.css"' in html
-    assert 'href="/static/app.css"' in html
+    assert 'href="/static/app.css?v=' in html
     assert 'src="/static/vendor/katex/katex.min.js"' in html
-    assert 'src="/static/app.js"' in html
+    assert 'src="/static/app.js?v=' in html
     assert "formulas-panel" in html
     assert "result-status" in html
     assert "page-tools" in html

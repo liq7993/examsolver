@@ -1,3 +1,26 @@
+function _showRuntimeError(label, detail) {
+  let banner = document.getElementById("__err-banner");
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "__err-banner";
+    banner.style.cssText =
+      "position:fixed;top:0;left:0;right:0;z-index:99999;background:#d94e00;color:#fff;" +
+      "padding:10px 14px;font:13px/1.5 ui-monospace,monospace;white-space:pre-wrap;" +
+      "box-shadow:0 4px 16px rgba(0,0,0,.25);max-height:40vh;overflow:auto";
+    document.body.appendChild(banner);
+  }
+  banner.textContent += `[${label}] ${detail}\n`;
+}
+window.addEventListener("error", (event) => {
+  _showRuntimeError(
+    "JS error",
+    `${event.message} @ ${event.filename || "?"}:${event.lineno || "?"}`,
+  );
+});
+window.addEventListener("unhandledrejection", (event) => {
+  _showRuntimeError("Promise reject", String(event.reason));
+});
+
 const state = {
   pages: [],
   currentIndex: -1,

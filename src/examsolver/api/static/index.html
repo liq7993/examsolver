@@ -179,13 +179,27 @@
 
         <form id="solve-form" class="composer-bar">
           <div class="composer-inner">
+            <div id="attachment-chips" class="attachment-chips" hidden></div>
             <div class="composer-row">
+              <button
+                id="attach-image-button"
+                class="icon-button"
+                type="button"
+                title="附加图片（OCR + 云端识图）"
+              >📎</button>
+              <input
+                id="attach-image-input"
+                type="file"
+                accept="image/*"
+                multiple
+                hidden
+              />
               <textarea
                 id="question-input"
                 name="question"
                 rows="1"
                 autocomplete="off"
-                placeholder="输入题目，Enter 提交 · Shift + Enter 换行"
+                placeholder="输入题目，Enter 提交 · Shift + Enter 换行；可附图"
               ></textarea>
               <button id="submit-button" class="primary-button" type="submit">↑</button>
             </div>

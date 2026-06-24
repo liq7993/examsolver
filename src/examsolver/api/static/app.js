@@ -9,6 +9,7 @@ const state = {
   activeSubject: null,
   mistakesOpen: false,
   mistakes: [],
+  attachments: [],
 };
 
 const ONBOARDED_KEY = "examsolver:onboarded";
@@ -68,6 +69,9 @@ const els = {
   flashcardsPanel: document.querySelector("#flashcards-panel"),
   flashcardsMeta: document.querySelector("#flashcards-meta"),
   flashcardList: document.querySelector("#flashcard-list"),
+  attachImageButton: document.querySelector("#attach-image-button"),
+  attachImageInput: document.querySelector("#attach-image-input"),
+  attachmentChips: document.querySelector("#attachment-chips"),
   history: document.querySelector("#history-list"),
   newThread: document.querySelector("#new-thread"),
   openSettings: document.querySelector("#open-settings"),
@@ -669,6 +673,55 @@ function renderExplanation(explanation) {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+function renderAttachments() {
+  if (!state.attachments.length) {
+    els.attachmentChips.hidden = true;
+    els.attachmentChips.innerHTML = "";
+    return;
+  }
+  els.attachmentChips.hidden = false;
+  els.attachmentChips.innerHTML = state.attachments
+    .map(
+      (att, index) => `
+        <span class="attachment-chip" data-index="${index}">
+          <img src="${att.previewUrl}" alt="${escapeHtml(att.name)}" />
+          <span>${escapeHtml(att.name)}</span>
+          <button type="button" data-remove-index="${index}" title="移除">×</button>
+        </span>
+      `,
+    )
+    .join("");
+}
+
+async function uploadAttachments(files) {
+  for (const file of files) {
+    if (!file.type.startsWith("image/")) continue;
+    const body = new FormData();
+    body.append("file", file);
+    try {
+      const response = await fetch("/solve/images", { method: "POST", body });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.detail || "上传失败");
+      state.attachments.push({
+        name: file.name,
+        path: payload.image_path,
+        previewUrl: URL.createObjectURL(file),
+      });
+      renderAttachments();
+    } catch (error) {
+      els.pageFlash.hidden = false;
+      els.pageFlash.textContent = `图片上传失败：${error.message || error}`;
+    }
+  }
+}
+
+function clearAttachments() {
+  for (const att of state.attachments) URL.revokeObjectURL(att.previewUrl);
+  state.attachments = [];
+  els.attachImageInput.value = "";
+  renderAttachments();
+}
+
 const CARD_TYPE_LABELS = { formula: "公式", concept: "概念", trap: "易错" };
 
 function renderFlashcards(page) {
@@ -740,14 +793,16 @@ async function solveQuestion(question) {
   els.pageFlash.hidden = false;
   els.pageFlash.textContent = "正在生成解题笔记…";
 
+  const attachedPaths = state.attachments.map((att) => att.path);
   try {
     const response = await fetch("/solve", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: trimmed }),
+      body: JSON.stringify({ question: trimmed, image_paths: attachedPaths }),
     });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.detail || "请求失败");
+    clearAttachments();
     const page = { question: trimmed, solve: payload, createdAt: new Date().toISOString() };
     const note = payload.note;
     if (payload.solve_id && note && (!Array.isArray(note.flashcards) || !note.flashcards.length)) {
@@ -1273,6 +1328,25 @@ els.formulaList.addEventListener("input", (event) => {
   preview.innerHTML = renderLatex(editor.value);
   const source = item.querySelector("[data-formula-source]");
   source.textContent = editor.value;
+});
+
+els.attachImageButton.addEventListener("click", () => {
+  els.attachImageInput.click();
+});
+
+els.attachImageInput.addEventListener("change", async (event) => {
+  const files = Array.from(event.target.files || []);
+  if (files.length) await uploadAttachments(files);
+  event.target.value = "";
+});
+
+els.attachmentChips.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-remove-index]");
+  if (!button) return;
+  const index = Number(button.getAttribute("data-remove-index"));
+  const removed = state.attachments.splice(index, 1)[0];
+  if (removed) URL.revokeObjectURL(removed.previewUrl);
+  renderAttachments();
 });
 
 els.flashcardList.addEventListener("click", (event) => {

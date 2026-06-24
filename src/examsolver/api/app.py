@@ -57,13 +57,18 @@ def create_app() -> FastAPI:
     app.include_router(export_router)
     app.include_router(settings_router)
 
+    # The HTML shell carries cache-busting query params on the static assets, so it
+    # MUST itself be re-validated every request -- otherwise a stale cached index.html
+    # keeps referencing an old (v=...) of the assets and the bust never reaches the user.
+    _no_cache = {"Cache-Control": "no-cache, no-store, must-revalidate"}
+
     @app.get("/", include_in_schema=False, name="frontend_index")
     def frontend_index() -> FileResponse:
-        return FileResponse(STATIC_DIR / "index.html")
+        return FileResponse(STATIC_DIR / "index.html", headers=_no_cache)
 
     @app.head("/", include_in_schema=False, name="frontend_head")
     def frontend_head() -> FileResponse:
-        return FileResponse(STATIC_DIR / "index.html")
+        return FileResponse(STATIC_DIR / "index.html", headers=_no_cache)
 
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="frontend_static")
     return app

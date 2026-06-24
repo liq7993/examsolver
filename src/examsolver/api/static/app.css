@@ -255,6 +255,13 @@ button {
   color: var(--text-2);
 }
 
+/* The hidden attribute must win over the display:grid above, otherwise the home
+   shell stays visible and covers a rendered note (matches the .project-view /
+   .page-flash [hidden] overrides elsewhere in this file). */
+.empty-page[hidden] {
+  display: none;
+}
+
 .hero {
   width: min(720px, 100%);
   display: grid;

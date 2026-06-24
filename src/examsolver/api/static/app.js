@@ -838,6 +838,7 @@ async function solveQuestion(question) {
     if (page.flashcardsPending) pollFlashcards(page);
     await refreshHistory();
   } catch (error) {
+    _showRuntimeError("解题失败", error && error.stack ? error.stack : String(error));
     els.pageFlash.hidden = false;
     els.pageFlash.textContent = error.message || "请求失败";
   } finally {
@@ -1133,7 +1134,7 @@ async function loadSolve(solveId, questionSnippet = "历史解答") {
   if (!solveId || state.busy) return;
   try {
     const response = await fetch(`/solve/${encodeURIComponent(solveId)}`, { cache: "no-store" });
-    if (!response.ok) throw new Error("历史解答不存在");
+    if (!response.ok) throw new Error(`GET /solve 返回 ${response.status}`);
     const payload = await response.json();
     state.pages.push({
       question: questionSnippet,
@@ -1144,6 +1145,7 @@ async function loadSolve(solveId, questionSnippet = "历史解答") {
     state.activeStepIndex = 0;
     renderCurrentPage();
   } catch (error) {
+    _showRuntimeError("打开历史失败", error && error.stack ? error.stack : String(error));
     els.empty.hidden = false;
     els.noteStack.hidden = true;
     els.empty.innerHTML = `<p>${escapeHtml(error.message || "读取失败")}</p>`;

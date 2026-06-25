@@ -464,7 +464,8 @@ function renderCurrentPage() {
   els.problemSubject.textContent = localize(labels.subject, solve.subject);
   els.problemType.textContent = localize(labels.type, solve.question_type);
   els.problemTime.textContent = formatTime(page.createdAt);
-  els.problemText.textContent = page.question;
+  els.problemText.textContent =
+    page.question || (solve.note && solve.note.question_latex) || "（图片题）";
   els.answerSkill.textContent = solve.skill || "unknown";
   els.answerText.innerHTML = renderMathText(formatAnswer(solve.answer));
   els.stepsMeta.textContent = `${steps.length} 步`;

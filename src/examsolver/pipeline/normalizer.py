@@ -17,14 +17,16 @@ _FORCE_QUANTITY_PATTERN = re.compile(r"[-+]?\d+(?:\.\d+)?\s*(?:kn|n|牛顿)\b", 
 def normalize(request: SolveRequest) -> NormalizedQuestion:
     """Normalize a raw solve request without classifying it."""
 
-    raw_text = request.question
-    if not isinstance(raw_text, str) or not raw_text.strip():
-        raise NormalizationError("question must be a non-empty string")
+    raw_text = request.question if isinstance(request.question, str) else ""
+    image_paths = list(request.image_paths)
+    if not raw_text.strip() and not image_paths:
+        raise NormalizationError(
+            "question must be a non-empty string unless an image is provided"
+        )
 
     normalized_text = unicodedata.normalize("NFKC", raw_text).strip()
     latex_segments = len(_LATEX_SEGMENT_PATTERN.findall(normalized_text))
     subject = request.subject_hint or request.subject or _infer_subject(normalized_text)
-    image_paths = list(request.image_paths)
 
     return NormalizedQuestion(
         raw_text=raw_text,

@@ -3,7 +3,8 @@ from pathlib import Path
 from fastapi import BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.testclient import TestClient
-from pytest import MonkeyPatch
+from pydantic import ValidationError
+from pytest import MonkeyPatch, raises
 from starlette.responses import Response
 
 from examsolver.api.app import STATIC_DIR, create_app
@@ -115,6 +116,15 @@ def test_llm_status_route_reports_local_gemma_configuration(
     assert response.model_path_exists is True
     assert response.server_reachable is True
     assert response.server_model_count == 1
+
+
+def test_solve_request_body_requires_question_or_image() -> None:
+    with raises(ValidationError):
+        SolveRequestBody(question="   ")
+
+    # A photo-only solve (image, no typed text) is allowed.
+    body = SolveRequestBody(question="", image_paths=["/tmp/x.png"])
+    assert body.to_contract().image_paths == ["/tmp/x.png"]
 
 
 def test_solve_route_delegates_to_service() -> None:

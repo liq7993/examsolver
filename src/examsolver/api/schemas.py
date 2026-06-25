@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from examsolver.contracts import (
     Citation,
@@ -25,10 +25,16 @@ from examsolver.storage.mistakes_repo import MistakeEntry
 class SolveRequestBody(BaseModel):
     """HTTP request body for POST /solve."""
 
-    question: str = Field(..., min_length=1)
+    question: str = ""
     subject: str | None = None
     context: dict[str, Any] | None = None
     image_paths: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _require_question_or_image(self) -> SolveRequestBody:
+        if not self.question.strip() and not self.image_paths:
+            raise ValueError("question or at least one image is required")
+        return self
 
     def to_contract(self) -> SolveRequest:
         return SolveRequest(

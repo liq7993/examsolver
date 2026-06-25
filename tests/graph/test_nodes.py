@@ -3,7 +3,13 @@ import logging
 from pytest import LogCaptureFixture
 
 from examsolver.contracts import NormalizedQuestion, NoteEntry, SolveRequest, SolveResult, Step
-from examsolver.graph.nodes import format_node, normalize_node, persist_node
+from examsolver.graph.nodes import (
+    _normalized_with_multimodal_context,
+    format_node,
+    normalize_node,
+    persist_node,
+)
+from examsolver.pipeline.classifier import classify
 from examsolver.storage.history_repo import get_response
 
 
@@ -70,6 +76,34 @@ def test_persist_node_saves_response_and_logs_lifecycle(caplog: LogCaptureFixtur
     messages = [record.getMessage() for record in caplog.records]
     assert any("graph.nodes.persist_node: begin" in message for message in messages)
     assert any("graph.nodes.persist_node: done" in message for message in messages)
+
+
+def test_multimodal_context_folds_ocr_into_unclassifiable_question() -> None:
+    typed = NormalizedQuestion(
+        raw_text="计算",
+        normalized_text="计算",
+        subject="unknown",
+        hints={"request_id": "rid", "solve_id": "sid", "created_at": "2026-06-24"},
+    )
+
+    enriched = _normalized_with_multimodal_context(
+        {"normalized": typed, "ocr_text": "求 x^2 对 x 的导数"}
+    )
+
+    assert "求 x^2 对 x 的导数" in enriched.normalized_text
+    assert enriched.subject == "calculus"
+    assert classify(enriched) == "derivative"
+
+
+def test_multimodal_context_leaves_clear_typed_question_untouched() -> None:
+    typed = _normalized()  # already classifiable on its own
+
+    enriched = _normalized_with_multimodal_context(
+        {"normalized": typed, "ocr_text": "无关 OCR 噪声"}
+    )
+
+    assert enriched.normalized_text == "求 x^2 对 x 的导数"
+    assert enriched.ocr_text == "无关 OCR 噪声"
 
 
 def _normalized() -> NormalizedQuestion:

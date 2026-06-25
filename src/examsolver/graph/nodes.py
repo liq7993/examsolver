@@ -16,9 +16,10 @@ from examsolver.multimodal.fallback import check_cloud_reachable
 from examsolver.multimodal.ocr_paddle import recognize
 from examsolver.multimodal.vlm_claude import describe as describe_images
 from examsolver.notes.note_builder import build_note
+from examsolver.pipeline.classifier import classify
 from examsolver.pipeline.dispatcher import dispatch
 from examsolver.pipeline.formatter import format_response
-from examsolver.pipeline.normalizer import normalize
+from examsolver.pipeline.normalizer import _infer_subject, normalize
 from examsolver.rag import retriever as rag_retriever
 from examsolver.services.explanation import enhance_if_needed
 from examsolver.services.plot import attach_plot
@@ -378,11 +379,28 @@ def _skill_needs_rag(subject: str | None, question_type: str | None) -> bool:
 
 def _normalized_with_multimodal_context(state: SolveGraphState) -> NormalizedQuestion:
     normalized = state["normalized"]
-    return replace(
+    ocr_text = state.get("ocr_text", normalized.ocr_text)
+    vision_description = state.get("vision_description", normalized.vision_description)
+    enriched = replace(
         normalized,
-        ocr_text=state.get("ocr_text", normalized.ocr_text),
-        vision_description=state.get("vision_description", normalized.vision_description),
+        ocr_text=ocr_text,
+        vision_description=vision_description,
     )
+    # Fold image-derived text into the question only when the typed text cannot be
+    # classified on its own. This is what turns "a photo of a problem" into a
+    # solvable question (router + skills read normalized_text), while leaving clear
+    # typed questions -- and their note title -- untouched.
+    image_text = "\n".join(
+        part for part in (ocr_text.strip(), vision_description.strip()) if part
+    )
+    if image_text and classify(enriched) == "unknown":
+        base = enriched.normalized_text.strip()
+        merged = f"{base}\n{image_text}".strip() if base else image_text
+        subject = enriched.subject
+        if subject in ("", "unknown", "general"):
+            subject = _infer_subject(merged)
+        enriched = replace(enriched, normalized_text=merged, subject=subject)
+    return enriched
 
 
 def _needs_vision(normalized: NormalizedQuestion) -> bool:

@@ -805,7 +805,7 @@ async function pollFlashcards(page) {
 
 async function solveQuestion(question) {
   const trimmed = question.trim();
-  if (!trimmed || state.busy) return;
+  if ((!trimmed && !state.attachments.length) || state.busy) return;
 
   setBusy(true);
   els.empty.hidden = true;

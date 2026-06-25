@@ -1,5 +1,21 @@
+import pytest
+
 from examsolver.contracts import SolveRequest
 from examsolver.pipeline.normalizer import normalize
+from examsolver.skills.base import NormalizationError
+
+
+def test_normalize_allows_empty_question_when_image_is_attached() -> None:
+    question = normalize(SolveRequest(question="", image_paths=["/tmp/x.png"]))
+
+    assert question.normalized_text == ""
+    assert question.has_image is True
+    assert question.image_paths == ["/tmp/x.png"]
+
+
+def test_normalize_rejects_empty_question_without_image() -> None:
+    with pytest.raises(NormalizationError):
+        normalize(SolveRequest(question="   "))
 
 
 def test_normalize_generates_ids_and_latex_hints() -> None:

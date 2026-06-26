@@ -10,6 +10,7 @@ across backends, so they live here once.
 
 from __future__ import annotations
 
+import base64
 import json
 import logging
 import time
@@ -111,10 +112,34 @@ class OpenAICompatibleClient:
         images: list[bytes],
         **kwargs: object,
     ) -> str:
-        """OpenAI-compatible text clients do not provide VLM support in M2."""
+        """Return a response for a multimodal request via OpenAI ``image_url`` parts.
 
-        _ = (messages, images, kwargs)
-        raise NotImplementedError(f"{type(self).__name__} does not support image input")
+        Images are inlined as base64 data URLs on the last user message -- the
+        format OpenAI, MiniMax, and other OpenAI-compatible vision endpoints share.
+        A text-only model/provider rejects this, and the caller degrades honestly.
+        """
+
+        json_schema = cast(dict[str, object] | None, kwargs.get("json_schema"))
+        max_tokens = _int_kwarg(kwargs, "max_tokens", 1024)
+        temperature = _float_kwarg(kwargs, "temperature", 0.2)
+        timeout = _float_kwarg(kwargs, "timeout", 30.0)
+        payload: dict[str, object] = {
+            "model": self.model,
+            "messages": _vision_messages_payload(messages, images),
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "stream": False,
+        }
+        if json_schema is not None:
+            payload["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {"name": _SCHEMA_NAME, "schema": json_schema, "strict": True},
+            }
+        data = self._post(payload, timeout=timeout)
+        content = _message_content(data)
+        if json_schema is not None:
+            content = _unwrap_structured_output(content)
+        return content
 
     def _headers(self) -> dict[str, str]:
         if self._api_key:
@@ -178,6 +203,46 @@ class OpenAICompatibleClient:
 
 def _messages_payload(messages: list[Message]) -> list[dict[str, str]]:
     return [{"role": message.role, "content": message.content} for message in messages]
+
+
+def _vision_messages_payload(
+    messages: list[Message], images: list[bytes]
+) -> list[dict[str, Any]]:
+    image_parts: list[dict[str, Any]] = [
+        {
+            "type": "image_url",
+            "image_url": {"url": f"data:image/png;base64,{base64.b64encode(image).decode('ascii')}"},
+        }
+        for image in images
+    ]
+    last_user_index = max(
+        (index for index, message in enumerate(messages) if message.role == "user"),
+        default=-1,
+    )
+    payload: list[dict[str, Any]] = []
+    for index, message in enumerate(messages):
+        if index == last_user_index:
+            payload.append(
+                {
+                    "role": message.role,
+                    "content": [{"type": "text", "text": message.content}, *image_parts],
+                }
+            )
+        else:
+            payload.append({"role": message.role, "content": message.content})
+    if last_user_index == -1:
+        payload.append({"role": "user", "content": image_parts})
+    return payload
+
+
+def _int_kwarg(kwargs: dict[str, object], name: str, default: int) -> int:
+    value = kwargs.get(name, default)
+    return value if isinstance(value, int) else default
+
+
+def _float_kwarg(kwargs: dict[str, object], name: str, default: float) -> float:
+    value = kwargs.get(name, default)
+    return float(value) if isinstance(value, int | float) else default
 
 
 def _message_content(data: dict[str, Any]) -> str:

@@ -7,6 +7,7 @@ import logging
 import httpx
 
 from examsolver.llm import ClaudeClient, Message
+from examsolver.llm.router import pick_llm
 from examsolver.multimodal import VLMError
 
 logger = logging.getLogger(__name__)
@@ -77,6 +78,39 @@ class ClaudeVLMClient:
 
 
 def describe(images: list[bytes], prompt: str) -> str:
-    """Describe images using the default Claude VLM client."""
+    """Describe images using whichever vision model is configured.
 
-    return ClaudeVLMClient().describe(images, prompt)
+    Provider-agnostic: routes through ``pick_llm(needs_vision=True)`` so any
+    configured vision-capable provider (cloud OpenAI-compatible or Claude) is used.
+    Degrades to ``VLMError`` when none is available or the call fails -- never
+    fabricates a description.
+    """
+
+    if not images:
+        raise VLMError("at least one image is required for VLM description")
+    try:
+        client = pick_llm("vision_description", needs_vision=True)
+    except ValueError as exc:  # e.g. Claude selected but its key is missing
+        raise VLMError("no vision-capable model is available") from exc
+    if client is None:
+        raise VLMError("no vision-capable model is configured")
+
+    logger.info("[unknown] INFO multimodal.describe: begin image_count=%s", len(images))
+    try:
+        description = client.chat_with_image(
+            [
+                Message(role="system", content=_SYSTEM_PROMPT),
+                Message(role="user", content=prompt),
+            ],
+            images,
+            max_tokens=512,
+            temperature=0.0,
+            timeout=30.0,
+        ).strip()
+    except (httpx.HTTPError, ValueError, TypeError, NotImplementedError) as exc:
+        raise VLMError("vision description failed") from exc
+
+    if not description:
+        raise VLMError("VLM returned an empty description")
+    logger.info("[unknown] INFO multimodal.describe: done")
+    return description

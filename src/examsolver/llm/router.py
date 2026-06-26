@@ -10,7 +10,7 @@ import json
 import os
 from typing import Any, cast
 
-from examsolver.config import cloud_llm_provider
+from examsolver.config import cloud_llm_provider, cloud_vision_model
 from examsolver.llm.base import LLMClient
 from examsolver.llm.base import Message
 from examsolver.llm.claude_client import ClaudeClient
@@ -22,16 +22,16 @@ def pick_llm(task_kind: str, needs_vision: bool) -> LLMClient | None:
     """Return the preferred LLM client for a task."""
 
     provider = os.getenv("EXAMSOLVER_LLM_PROVIDER", "").strip().lower()
+    if needs_vision:
+        return _vision_client(provider, task_kind)
     if provider == "claude":
         return ClaudeClient(task_kind=task_kind)
-    if not needs_vision:
-        cloud_client = _cloud_openai_client(provider, task_kind)
-        if cloud_client is not None:
-            return cloud_client
-    if provider == "local_gguf" and task_kind in {"route", "extract_simple"} and not needs_vision:
+    cloud_client = _cloud_openai_client(provider, task_kind)
+    if cloud_client is not None:
+        return cloud_client
+    if provider == "local_gguf" and task_kind in {"route", "extract_simple"}:
         return LocalGGUFClient(task_kind=task_kind)
-
-    if needs_vision or task_kind in {"synthesize", "explain"}:
+    if task_kind in {"synthesize", "explain"}:
         return ClaudeClient(task_kind=task_kind)
     if task_kind == "general_solve":
         if os.getenv("ANTHROPIC_API_KEY"):
@@ -39,6 +39,34 @@ def pick_llm(task_kind: str, needs_vision: bool) -> LLMClient | None:
         return _OfflineGeneralSolveClient()
     if task_kind in {"route", "extract_simple"}:
         return LocalGGUFClient(task_kind=task_kind)
+    return None
+
+
+def _vision_client(provider: str, task_kind: str) -> LLMClient | None:
+    """Pick a vision-capable client for the configured provider, or degrade.
+
+    Any cloud provider with a known vision model is used over its OpenAI-compatible
+    endpoint; the Claude provider uses its native vision; otherwise fall back to
+    Claude when its key is present, and finally return ``None`` so the VLM node
+    degrades honestly instead of pretending to see.
+    """
+
+    if provider == "claude":
+        return ClaudeClient(task_kind=task_kind)
+    spec = cloud_llm_provider(provider)
+    if spec is not None:
+        api_key = os.getenv(spec.api_key_env)
+        vision_model = cloud_vision_model(spec)
+        if api_key and vision_model:
+            return OpenAICompatibleClient(
+                base_url=spec.base_url,
+                model=vision_model,
+                api_key=api_key,
+                task_kind=task_kind,
+                provider_label=spec.name,
+            )
+    if os.getenv("ANTHROPIC_API_KEY"):
+        return ClaudeClient(task_kind=task_kind)
     return None
 
 

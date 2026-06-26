@@ -1,3 +1,4 @@
+import base64
 import json
 
 import httpx
@@ -125,6 +126,26 @@ def test_chat_does_not_retry_on_non_400_status() -> None:
     assert route.call_count == 1
 
 
+@respx.mock
+def test_chat_with_image_sends_image_url_base64() -> None:
+    route = respx.post(CHAT_URL).mock(
+        return_value=httpx.Response(200, json={"choices": [{"message": {"content": "两级齿轮"}}]})
+    )
+    client = OpenAICompatibleClient(base_url=BASE_URL, model="vl-model", api_key="sk")
+    image = b"\x89PNG\r\n"
+
+    result = client.chat_with_image([Message(role="user", content="描述")], [image], timeout=1.0)
+
+    assert result == "两级齿轮"
+    payload = json.loads(route.calls.last.request.content)
+    assert payload["model"] == "vl-model"
+    content = payload["messages"][0]["content"]
+    assert content[0] == {"type": "text", "text": "描述"}
+    assert content[1]["type"] == "image_url"
+    expected_url = f"data:image/png;base64,{base64.b64encode(image).decode('ascii')}"
+    assert content[1]["image_url"]["url"] == expected_url
+
+
 def test_local_gguf_is_an_openai_compatible_client_without_key() -> None:
     client = LocalGGUFClient(base_url=BASE_URL, model="local-model")
 
@@ -153,16 +174,46 @@ def test_router_selects_cloud_client_for_keyed_provider(
         assert not isinstance(client, LocalGGUFClient)
 
 
-def test_router_keeps_vision_on_claude_even_with_cloud_provider(
+def test_router_routes_vision_to_cloud_provider_with_vision_model(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setenv("EXAMSOLVER_LLM_PROVIDER", "minimax")
+    monkeypatch.setenv("MINIMAX_API_KEY", "sk-mini")
+    monkeypatch.delenv("EXAMSOLVER_LLM_VISION_MODEL", raising=False)
+
+    client = pick_llm("vision_description", needs_vision=True)
+
+    assert isinstance(client, OpenAICompatibleClient)
+    assert not isinstance(client, LocalGGUFClient)
+    assert client.model == "MiniMax-VL-01"
+
+
+def test_router_vision_falls_back_to_claude_without_provider_vision_model(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # deepseek has no registered vision model, so vision stays on Claude.
     monkeypatch.setenv("EXAMSOLVER_LLM_PROVIDER", "deepseek")
     monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-test")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    monkeypatch.delenv("EXAMSOLVER_LLM_VISION_MODEL", raising=False)
 
-    client = pick_llm("extract_simple", needs_vision=True)
+    client = pick_llm("vision_description", needs_vision=True)
 
     assert isinstance(client, ClaudeClient)
+
+
+def test_router_vision_env_override_enables_any_provider(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Even a provider with no built-in vision model can do vision via the override.
+    monkeypatch.setenv("EXAMSOLVER_LLM_PROVIDER", "deepseek")
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-test")
+    monkeypatch.setenv("EXAMSOLVER_LLM_VISION_MODEL", "deepseek-vl")
+
+    client = pick_llm("vision_description", needs_vision=True)
+
+    assert isinstance(client, OpenAICompatibleClient)
+    assert client.model == "deepseek-vl"
 
 
 def test_router_falls_back_when_cloud_provider_has_no_key(

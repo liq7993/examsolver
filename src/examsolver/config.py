@@ -126,6 +126,10 @@ class CloudLLMProvider:
     base_url: str
     default_model: str
     api_key_env: str
+    # Multimodal (vision) model for this provider, when known. Left None for
+    # text-only providers; an env override (EXAMSOLVER_LLM_VISION_MODEL) wins so a
+    # new vision model can be pointed at without a code change.
+    vision_model: str | None = None
 
 
 # Cloud providers that speak the OpenAI chat-completions wire format. Select one
@@ -145,6 +149,7 @@ _CLOUD_LLM_PROVIDERS: dict[str, CloudLLMProvider] = {
         base_url="https://api.minimaxi.com/v1",
         default_model="MiniMax-Text-01",
         api_key_env="MINIMAX_API_KEY",
+        vision_model="MiniMax-VL-01",
     ),
     "deepseek": CloudLLMProvider(
         name="deepseek",
@@ -166,8 +171,21 @@ _CLOUD_LLM_PROVIDERS: dict[str, CloudLLMProvider] = {
         base_url="https://api.openai.com/v1",
         default_model="gpt-4o-mini",
         api_key_env="OPENAI_API_KEY",
+        vision_model="gpt-4o-mini",
     ),
 }
+
+
+def cloud_vision_model(provider: CloudLLMProvider) -> str | None:
+    """Resolve the vision model for a provider: env override, then the registry.
+
+    Returns ``None`` when no vision model is known/configured, which the router
+    treats as "this provider cannot see" and degrades honestly rather than
+    sending images to a text-only model.
+    """
+
+    override = os.environ.get("EXAMSOLVER_LLM_VISION_MODEL", "").strip()
+    return override or provider.vision_model
 
 
 def cloud_llm_provider(name: str) -> CloudLLMProvider | None:

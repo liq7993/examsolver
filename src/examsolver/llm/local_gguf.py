@@ -5,6 +5,7 @@ from __future__ import annotations
 import httpx
 
 from examsolver.config import load_llm_config
+from examsolver.llm.base import Message
 from examsolver.llm.openai_compatible import OpenAICompatibleClient
 
 DEFAULT_LOCAL_BASE_URL = "http://127.0.0.1:8080/v1"
@@ -36,3 +37,14 @@ class LocalGGUFClient(OpenAICompatibleClient):
             provider_label="local_gguf",
             client=client,
         )
+
+    def chat_with_image(
+        self,
+        messages: list[Message],
+        images: list[bytes],
+        **kwargs: object,
+    ) -> str:
+        """Local text GGUF models cannot see images -- vision degrades elsewhere."""
+
+        _ = (messages, images, kwargs)
+        raise NotImplementedError("local GGUF client does not support image input")

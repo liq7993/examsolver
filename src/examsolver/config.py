@@ -149,7 +149,10 @@ _CLOUD_LLM_PROVIDERS: dict[str, CloudLLMProvider] = {
         base_url="https://api.minimaxi.com/v1",
         default_model="MiniMax-Text-01",
         api_key_env="MINIMAX_API_KEY",
-        vision_model="MiniMax-VL-01",
+        # No verified vision model: MiniMax's /v1/chat/completions rejected the
+        # guessed id and reportedly may ignore OpenAI image_url parts. Set
+        # EXAMSOLVER_LLM_VISION_MODEL once a working MiniMax vision model is confirmed.
+        vision_model=None,
     ),
     "deepseek": CloudLLMProvider(
         name="deepseek",

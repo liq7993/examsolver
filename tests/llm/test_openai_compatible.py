@@ -177,15 +177,15 @@ def test_router_selects_cloud_client_for_keyed_provider(
 def test_router_routes_vision_to_cloud_provider_with_vision_model(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("EXAMSOLVER_LLM_PROVIDER", "minimax")
-    monkeypatch.setenv("MINIMAX_API_KEY", "sk-mini")
+    monkeypatch.setenv("EXAMSOLVER_LLM_PROVIDER", "openai")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-openai")
     monkeypatch.delenv("EXAMSOLVER_LLM_VISION_MODEL", raising=False)
 
     client = pick_llm("vision_description", needs_vision=True)
 
     assert isinstance(client, OpenAICompatibleClient)
     assert not isinstance(client, LocalGGUFClient)
-    assert client.model == "MiniMax-VL-01"
+    assert client.model == "gpt-4o-mini"
 
 
 def test_router_vision_falls_back_to_claude_without_provider_vision_model(

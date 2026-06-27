@@ -13,7 +13,7 @@
 - **可用产品形态**：后端 FastAPI 自带的单页工作台（`/` 直接服务 `api/static/index.html`），含侧边栏「设置 / 错题本」、设置弹窗（选云端服务商 + 填 API key）、解题工作区、Markdown/PDF 导出、KaTeX 公式渲染。**打开 `http://localhost:8000/` 即用。**
 - **LLM 方向**：聚焦闭源云模型（MiniMax / Claude / DeepSeek / Moonshot / OpenAI，统一 OpenAI 兼容接口），本地 GGUF（Gemma / GPT-OSS）为可选离线后端。
 - **质量基线**：`273 passed / 3 skipped`，`ruff` + `mypy --strict` 全绿；测试含离线 golden-set 回归与教材引用命中用例，FakeLLM 注入保证可离线复跑。
-- 早期的独立 Next.js 前端构建已移除——产品前端就是上面的 `:8000` 内置 UI。旧 OSS 规划归档在 `_archive_old_oss_plan/`，**不再参考**。
+- 早期的独立 Next.js 前端构建已移除——产品前端就是上面的 `:8000` 内置 UI。
 
 ---
 

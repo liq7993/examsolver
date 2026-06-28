@@ -21,6 +21,7 @@ from examsolver.pipeline.dispatcher import dispatch
 from examsolver.pipeline.formatter import format_response
 from examsolver.pipeline.normalizer import _infer_subject, normalize
 from examsolver.rag import retriever as rag_retriever
+from examsolver.services.agentic_solve import agentic_solve
 from examsolver.services.explanation import enhance_if_needed
 from examsolver.services.plot import attach_plot
 from examsolver.skills.base import PersistenceError
@@ -100,19 +101,23 @@ def router_agent_node(state: SolveGraphState) -> SolveGraphState:
     decision = route_question(normalized)
     request_id = str(normalized.hints.get("request_id", "unknown"))
     needs_vision = _needs_vision(normalized)
+    # Multi-step questions (二阶导 = differentiate twice, A·B·C = chained matmul)
+    # would otherwise regex-classify as a single type and be solved only partially;
+    # route them to the agentic orchestrator instead.
+    question_type = "multi_step" if _is_multi_step(normalized) else decision.question_type
     _log_info(
         request_id,
         "router_agent_node",
         "subject=%s question_type=%s confidence=%.2f needs_vision=%s",
         decision.subject,
-        decision.question_type,
+        question_type,
         decision.confidence,
         needs_vision,
     )
     routed_state: SolveGraphState = {
         "normalized": normalized,
         "subject": decision.subject,
-        "question_type": decision.question_type,
+        "question_type": question_type,
         "routing_confidence": decision.confidence,
         "routing_reasoning": decision.reasoning,
         "needs_vision": needs_vision,
@@ -174,8 +179,10 @@ def vlm_node(state: SolveGraphState) -> SolveGraphState:
 
 
 def route_after_router(state: SolveGraphState) -> str:
-    """Send known types to skills and unsupported types to the general fallback."""
+    """Route: multi-step to the agentic loop, known types to skills, rest to general."""
 
+    if state.get("question_type") == "multi_step":
+        return "agentic"
     if _should_retrieve_rag(state):
         return "rag_retrieve"
     return "general" if state.get("question_type") == "unknown" else "skill"
@@ -184,6 +191,8 @@ def route_after_router(state: SolveGraphState) -> str:
 def route_after_rag(state: SolveGraphState) -> str:
     """Continue to the original solve branch after optional RAG retrieval."""
 
+    if state.get("question_type") == "multi_step":
+        return "agentic"
     return "general" if state.get("question_type") == "unknown" else "skill"
 
 
@@ -245,6 +254,28 @@ def general_node(state: SolveGraphState) -> SolveGraphState:
             "fallback_reasons": fallback_reasons,
         }
     _log_info(request_id, "general_node", "skill=%s", result.skill)
+    return {"solve_result": result}
+
+
+def agentic_solve_node(state: SolveGraphState) -> SolveGraphState:
+    """Solve a multi-step question by orchestrating deterministic skills."""
+
+    normalized = state["normalized"]
+    request_id = str(normalized.hints.get("request_id", "unknown"))
+    routed_question = replace(normalized, subject=state.get("subject", normalized.subject))
+    try:
+        llm = pick_llm("general_solve", needs_vision=False)
+        result = agentic_solve(routed_question, llm=llm)
+    except Exception as exc:
+        _log_warning(request_id, "agentic_solve_node", "fallback agentic_failed: %s", exc)
+        result = unknown_skill().solve(routed_question)
+        return {
+            "solve_result": result,
+            "fallback_reasons": [*state.get("fallback_reasons", []), "agentic_failed"],
+        }
+    _log_info(
+        request_id, "agentic_solve_node", "skill=%s steps=%s", result.skill, len(result.steps)
+    )
     return {"solve_result": result}
 
 
@@ -410,6 +441,32 @@ def _needs_vision(normalized: NormalizedQuestion) -> bool:
     has_visual_keyword = any(keyword in text for keyword in ("图", "机构", "画", "所示"))
     has_short_ocr = len(normalized.ocr_text.strip()) < 20
     return has_visual_keyword or has_short_ocr
+
+
+_MULTI_STEP_MARKERS = (
+    "二阶导",
+    "三阶导",
+    "高阶导",
+    "的导数的导数",
+    "再求导",
+    "再对",
+    "再乘",
+    "然后",
+    "接着",
+)
+
+
+def _is_multi_step(normalized: NormalizedQuestion) -> bool:
+    """Conservatively detect chained multi-step questions for the agentic loop.
+
+    Only fires on explicit chaining signals (二阶导 / 再求导 / 然后 ...) or 3+
+    chained matrices, so single-step questions keep the fast deterministic path.
+    """
+
+    text = normalized.normalized_text
+    if any(marker in text for marker in _MULTI_STEP_MARKERS):
+        return True
+    return text.count("[[") >= 3
 
 
 def _read_image_bytes(path: str) -> bytes:

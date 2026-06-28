@@ -11,6 +11,7 @@ from langgraph.graph.state import CompiledStateGraph
 
 from examsolver.contracts import ExplanationEnhancer, SolveRequest, SolveResponse
 from examsolver.graph.nodes import (
+    agentic_solve_node,
     explanation_enhancer_node,
     format_node,
     general_node,
@@ -50,6 +51,7 @@ def build_graph() -> CompiledStateGraph[Any, Any, Any, Any]:
     graph.add_node("rag_retrieve", rag_retrieve_node)
     graph.add_node("skill", skill_node)
     graph.add_node("general", general_node)
+    graph.add_node("agentic", agentic_solve_node)
     graph.add_node("explanation_enhancer", explanation_enhancer_node)
     graph.add_node("plot", plot_node)
     graph.add_node("note_builder", note_builder_node)
@@ -66,20 +68,32 @@ def build_graph() -> CompiledStateGraph[Any, Any, Any, Any]:
     graph.add_conditional_edges(
         "router_agent",
         route_after_router_agent,
-        {"vlm": "vlm", "rag_retrieve": "rag_retrieve", "skill": "skill", "general": "general"},
+        {
+            "vlm": "vlm",
+            "rag_retrieve": "rag_retrieve",
+            "skill": "skill",
+            "general": "general",
+            "agentic": "agentic",
+        },
     )
     graph.add_conditional_edges(
         "vlm",
         route_after_vlm,
-        {"rag_retrieve": "rag_retrieve", "skill": "skill", "general": "general"},
+        {
+            "rag_retrieve": "rag_retrieve",
+            "skill": "skill",
+            "general": "general",
+            "agentic": "agentic",
+        },
     )
     graph.add_conditional_edges(
         "rag_retrieve",
         route_after_rag,
-        {"skill": "skill", "general": "general"},
+        {"skill": "skill", "general": "general", "agentic": "agentic"},
     )
     graph.add_edge("skill", "explanation_enhancer")
     graph.add_edge("general", "explanation_enhancer")
+    graph.add_edge("agentic", "explanation_enhancer")
     graph.add_edge("explanation_enhancer", "plot")
     graph.add_edge("plot", "note_builder")
     graph.add_edge("note_builder", "format")

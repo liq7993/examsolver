@@ -47,6 +47,32 @@ _PURE_LLM_PROMPT = (
     "最后一行用『答案：<最终答案>』给出，不要冗长推导。\n题目：{question}"
 )
 
+# Multi-step set: each case decomposes into a CHAIN of existing deterministic skills
+# (二阶导 = 求导×2, 三阶导 = 求导×3, A·B·C = 矩阵乘×2). A single skill solves them only
+# partially; examsolver's agentic loop plans the chain and runs each leaf deterministically.
+# Raw LLMs lose accuracy here as derivatives/arithmetic compound -- exactly where the
+# deterministic core amplifies a weaker model. not_contains catches partial answers
+# (e.g. only the first matrix product).
+MULTI_STEP_SET: list[GoldenCase] = [
+    GoldenCase("d2_x3", "求 x^3 的二阶导数", "agentic.multi_step", ["6 x"]),
+    GoldenCase("d2_x4", "求 x^4 的二阶导数", "agentic.multi_step", ["12 x^{2}"]),
+    GoldenCase("d3_x5", "求 x^5 的三阶导数", "agentic.multi_step", ["60 x^{2}"]),
+    GoldenCase(
+        "matmul_chain_1",
+        "计算 [[1,2],[3,4]] 乘 [[5,6],[7,8]] 再乘 [[1,0],[1,1]]",
+        "agentic.multi_step",
+        ["41", "22", "93", "50"],
+        ["19", "43"],
+    ),
+    GoldenCase(
+        "matmul_chain_2",
+        "计算 [[3,2],[1,4]] 乘 [[2,1],[3,5]] 再乘 [[1,0],[2,1]]",
+        "agentic.multi_step",
+        ["38", "13", "56", "21"],
+        ["12", "14"],
+    ),
+]
+
 _TOKEN_RE = re.compile(r"tokens_in=(\d+) tokens_out=(\d+)")
 
 
@@ -96,6 +122,11 @@ def _pure_llm_answer(case: GoldenCase) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description="examsolver vs raw-LLM accuracy + tokens.")
     parser.add_argument("--limit", type=int, default=0, help="only the first N cases")
+    parser.add_argument(
+        "--multistep",
+        action="store_true",
+        help="evaluate the multi-step set (agentic loop) instead of the golden set",
+    )
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
 
@@ -104,8 +135,14 @@ def main() -> None:
     logging.getLogger("examsolver").setLevel(logging.INFO)
     logging.disable(logging.NOTSET)
 
-    cases = GOLDEN_SET[: args.limit] if args.limit else GOLDEN_SET
+    source = MULTI_STEP_SET if args.multistep else GOLDEN_SET
+    cases = source[: args.limit] if args.limit else source
     has_llm = pick_llm("general_solve", needs_vision=False) is not None
+    if args.multistep and not has_llm:
+        print(
+            "note: the multi-step examsolver arm needs a configured cloud provider "
+            "(the agentic loop uses it to PLAN); without one it degrades to fallback."
+        )
 
     es_pass = es_tok = llm_pass = llm_tok = 0
     for case in cases:
@@ -134,7 +171,8 @@ def main() -> None:
             print(f"[es:{es_mark} llm:{llm_mark}] {case.name}: {case.question[:40]}")
 
     total = len(cases)
-    print(f"\n=== Amplification eval: {total} questions ===")
+    label = "multi-step / agentic" if args.multistep else "golden"
+    print(f"\n=== Amplification eval [{label}]: {total} questions ===")
     print(f"examsolver : {es_pass}/{total} = {es_pass / total:.0%}   tokens≈{es_tok}")
     if has_llm:
         print(f"raw LLM    : {llm_pass}/{total} = {llm_pass / total:.0%}   tokens≈{llm_tok}")

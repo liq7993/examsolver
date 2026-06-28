@@ -79,6 +79,9 @@ class MatrixMulSkill:
                 "linear_algebra.matrix_mul.left_shape": left_shape,
                 "linear_algebra.matrix_mul.right_shape": right_shape,
                 "linear_algebra.matrix_mul.product_shape": product_shape,
+                # Clean, parser-round-trippable result for agentic chaining
+                # (repr -> "[[19, 22], [43, 50]]", which _parse_matrix accepts back).
+                "result": repr(product),
             },
         )
 

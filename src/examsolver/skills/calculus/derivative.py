@@ -134,6 +134,9 @@ class DerivativeSkill:
                 "calculus.derivative.expression": str(expression),
                 "calculus.derivative.derivative": str(derivative),
                 "calculus.derivative.variable": str(variable),
+                # Clean, parser-round-trippable result for agentic chaining
+                # (e.g. second derivative feeds str(derivative) back in).
+                "result": str(derivative),
             },
         )
 

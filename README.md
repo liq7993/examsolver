@@ -12,7 +12,8 @@
 
 - **可用产品形态**：后端 FastAPI 自带的单页工作台（`/` 直接服务 `api/static/index.html`），含侧边栏「设置 / 错题本」、设置弹窗（选云端服务商 + 填 API key）、解题工作区、Markdown/PDF 导出、KaTeX 公式渲染。**打开 `http://localhost:8000/` 即用。**
 - **LLM 方向**：聚焦闭源云模型（MiniMax / Claude / DeepSeek / Moonshot / OpenAI，统一 OpenAI 兼容接口），本地 GGUF（Gemma / GPT-OSS）为可选离线后端。
-- **质量基线**：`273 passed / 3 skipped`，`ruff` + `mypy --strict` 全绿；测试含离线 golden-set 回归与教材引用命中用例，FakeLLM 注入保证可离线复跑。
+- **质量基线**：`290 passed / 3 skipped`，`ruff` + `mypy --strict` 全绿；测试含离线 golden-set 回归与教材引用命中用例，FakeLLM 注入保证可离线复跑。
+- **多步解题（agentic）**：二阶/三阶导、矩阵连乘等多步题由 agentic 环编排——识别题型后**确定性拆解**成子步、逐步调确定性 skill 求解并验算、链式拼装。评测台实测：同一 MiniMax 模型，raw 60% → 接入内核 100%（多步 Δ=+40%，大于单步的 +17%），且 token 更省（≈846 vs 4399）。
 - 早期的独立 Next.js 前端构建已移除——产品前端就是上面的 `:8000` 内置 UI。
 
 ---
@@ -27,11 +28,11 @@
 **管线节点**（单一职责，按题型条件跳过）：
 
 ```
-normalize → ocr → vlm → router_agent → rag_retrieve → skill / general
+normalize → ocr → vlm → router_agent → rag_retrieve → skill / general / agentic
           → explanation_enhancer → plot → note_builder → format → persist
 ```
 
-- `skill_node` 跑确定性解题（sympy），`general_node` 走结构化兜底；
+- `skill_node` 跑确定性解题（sympy），`general_node` 走结构化兜底，`agentic` 跑多步编排环；
 - `explanation_enhancer` 补教学性「学生解释」，`plot_node` 用 sympy 确定性生成函数图像；
 - `note_builder` 组装一页笔记，`persist` 落 SQLite。
 
@@ -44,6 +45,7 @@ normalize → ocr → vlm → router_agent → rag_retrieve → skill / general
 | 能力 | 怎么做 |
 |---|---|
 | **确定性解题** | sympy 求导 / 矩阵 / 受力平衡等；答案与步骤可验证，**不让大模型编答案**。Type-D 数学题禁用正则解析表达式（正则只用于自然语言抽取）。|
+| **多步解题（agentic）** | 二阶/三阶导、矩阵连乘等：识别题型后**确定性拆解**为子步，逐步调用确定性 skill 求解＋验算，链式拼装；只有未识别的新型多步才回退 LLM 规划。拆解与计算都确定性，弱模型也不易出错。|
 | **学生解释** | 云端大模型生成讲解/直觉/常见错误/自检问题，作为教学层包裹确定性答案。|
 | **多模态 + 诚实降级** | PaddleOCR 本地识字；看图（齿轮图算传动比等）走云端 Claude VLM。**离线时返回「图像理解需联网，已为你提取文字部分」，不假装本地能看图。** |
 | **RAG + 教材引用** | sentence-transformers 嵌入 + sqlite-vec 检索；公差题（H7/g6 等）附教材引用片段。|
